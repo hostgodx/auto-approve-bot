@@ -206,6 +206,9 @@ async function sendRichCard(ctx, chatId, built, fallbackHtml, extra = {}, opts =
   const tg = ctx.telegram;
   const preferCelebration = !!opts.celebration;
   const effectId = pickEffect(preferCelebration);
+  // Normalize: if built is a RichHTMLBuilder instance (has .build()), call .build()
+  // to get { html: ... } which Telegram's sendRichMessage expects.
+  const normalizedBuilt = built && typeof built.build === 'function' ? built.build() : built;
   const attempt = async (label, fn) => {
     try {
       return await fn();
@@ -219,12 +222,12 @@ async function sendRichCard(ctx, chatId, built, fallbackHtml, extra = {}, opts =
     // 1) rich card with animated effect (private chats)
     if (effectId) {
       const withEffect = await attempt('rich+effect', () =>
-        tg.sendRichMessage(chatId, built, { ...extra, message_effect_id: effectId })
+        tg.sendRichMessage(chatId, normalizedBuilt, { ...extra, message_effect_id: effectId })
       );
       if (withEffect) return withEffect;
     }
     // 2) rich card without effect (effect rejected / unsupported)
-    const plainRich = await attempt('rich', () => tg.sendRichMessage(chatId, built, extra));
+    const plainRich = await attempt('rich', () => tg.sendRichMessage(chatId, normalizedBuilt, extra));
     if (plainRich) return plainRich;
   }
   // 3) styled HTML fallback
