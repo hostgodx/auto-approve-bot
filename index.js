@@ -58,7 +58,7 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://auto-approve-bot-m60r.onr
 const WELCOME_AUDIO_URL = process.env.WELCOME_AUDIO_URL || `${PUBLIC_URL}/welcome.mp3`;
 const WELCOME_AUDIO_FILE = path.join(__dirname, 'assets', 'welcome.mp3');
 const WELCOME_IMAGE = ['1', 'true', 'yes', 'on'].includes(String(process.env.WELCOME_IMAGE || 'on').toLowerCase());
-const WELCOME_IMAGE_URL = process.env.WELCOME_IMAGE_URL || `${PUBLIC_URL}/welcome.jpg`;
+const WELCOME_IMAGE_URL = process.env.WELCOME_IMAGE_URL || 'https://files.catbox.moe/h5wvi8.webp';
 const WELCOME_IMAGE_FILE = path.join(__dirname, 'assets', 'welcome.jpg');
 const WELCOME_IMAGE2_URL = process.env.WELCOME_IMAGE2_URL || `${PUBLIC_URL}/welcome2.jpg`;
 const WELCOME_IMAGE2_FILE = path.join(__dirname, 'assets', 'welcome2.jpg');
@@ -306,14 +306,12 @@ const listChannels = () => Object.entries(DB.forceSub).map(([id, ch]) => ({ id, 
 const buildWelcome = (user) => {
   const userId = user && user.id;
   const name = htmlEsc((user && user.first_name) || 'User');
-  const uname = user && user.username ? `@${user.username}` : null;
   const mention = userId ? `<a href="tg://user?id=${userId}">${name}</a>` : name;
-  const handle = uname ? ` · ${htmlEsc(uname)}` : '';
 
   const rich = new RH()
     .heading(1, `👑 ${FANCY(htmlEsc(BRAND_NAME).toUpperCase(), 'bold')}`)
-    .paragraph(`Welcome, ${mention}${handle} 🎉`)
-    .paragraph(RH.italic(FANCY('Premium auto-approval engine for exclusive channels — built for VIPs.', 'script')));
+    .paragraph(`Welcome, ${mention} 🎉`)
+    .paragraph(RH.italic(FANCY('Premium auto-approval engine for exclusive channels — built for VIPs.', 'bold')));
   if (WELCOME_IMAGE && WELCOME_IMAGE_URL) rich.photo(WELCOME_IMAGE_URL, `👑  ${htmlEsc(BRAND_NAME)}`);
   if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
