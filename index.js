@@ -57,6 +57,9 @@ const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'fsub_data.json'
 const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://auto-approve-bot-m60r.onrender.com').replace(/\/+$/, '');
 const WELCOME_AUDIO_URL = process.env.WELCOME_AUDIO_URL || `${PUBLIC_URL}/welcome.mp3`;
 const WELCOME_AUDIO_FILE = path.join(__dirname, 'assets', 'welcome.mp3');
+const WELCOME_IMAGE = ['1', 'true', 'yes', 'on'].includes(String(process.env.WELCOME_IMAGE || 'on').toLowerCase());
+const WELCOME_IMAGE_URL = process.env.WELCOME_IMAGE_URL || `${PUBLIC_URL}/welcome.jpg`;
+const WELCOME_IMAGE_FILE = path.join(__dirname, 'assets', 'welcome.jpg');
 // Official listening link (we don't host copyrighted audio — we link the official source)
 const LISTEN_LINK = ['1', 'true', 'yes', 'on'].includes(String(process.env.LISTEN_LINK || 'on').toLowerCase());
 const OFFICIAL_LISTEN_URL = process.env.OFFICIAL_LISTEN_URL || 'https://www.youtube.com/watch?v=ZE0vLQ9nZH4';
@@ -303,6 +306,7 @@ const buildWelcome = (user) => {
     .heading(1, '👑 AUTO APPROVAL BOT')
     .paragraph(`Welcome, ${mention}${handle} 🎉`)
     .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
+  if (WELCOME_IMAGE && WELCOME_IMAGE_URL) rich.photo(WELCOME_IMAGE_URL, `👑  ${htmlEsc(BRAND_NAME)}`);
   if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
     .divider()
@@ -695,6 +699,15 @@ app.get('/health', (req, res) =>
     pending_requests: Object.values(DB.pending).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0),
   })
 );
+
+// 👑 Welcome hero image — served so Telegram can render it inside rich messages
+app.get('/welcome.jpg', (req, res) => {
+  if (!fs.existsSync(WELCOME_IMAGE_FILE)) return res.status(404).json({ error: 'image not found' });
+  res.setHeader('Content-Type', 'image/jpeg');
+  res.setHeader('Content-Length', fs.statSync(WELCOME_IMAGE_FILE).size);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  fs.createReadStream(WELCOME_IMAGE_FILE).pipe(res);
+});
 
 // 🎵 Welcome Theme — served so Telegram can render it inside rich messages
 app.get('/welcome.mp3', (req, res) => {
