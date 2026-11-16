@@ -349,7 +349,7 @@ const buildWelcome = (user) => {
   rich.buttonRow(
     [
       { text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' },
-      { text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
+      { text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
     ],
     'center'
   );
@@ -552,6 +552,7 @@ bot.command('addchat', async (ctx) => {
     DB.forceSub[String(chat.id)] = {
       title: chat.title || String(chat.id),
       username: chat.username || null,
+      type: chat.type || 'group', // 'channel', 'group', 'supergroup'
     };
     saveData();
     const msg = await ctx.replyWithHTML(
@@ -620,12 +621,14 @@ bot.command('set', async (ctx) => {
     .heading(2, '⚙️ BOT SETUP')
     .paragraph('Registered force-sub groups & channels:');
 
+  const typeIcon = (t) => (t === 'channel' ? '📢' : '👥');
+
   if (entries.length === 0) {
     built.paragraph('⚠️ Abhi koi group ya channel force-sub mein add nahi hai.');
   } else {
     const lines = entries.map((c) =>
-      `• ${htmlEsc(c.title)} <code>(${c.id})</code>${c.username ? ` @${htmlEsc(c.username)}` : ''}`
-    ).join('\\n');
+      `• ${typeIcon(c.type)} ${htmlEsc(c.title)} <code>(${c.id})</code>${c.username ? ` @${htmlEsc(c.username)}` : ''}`
+    ).join('\n');
     built.paragraph(lines);
     built.divider();
     built.paragraph(`⏳ Users pending verification: <code>${pendingTotal}</code>`);
@@ -637,17 +640,17 @@ bot.command('set', async (ctx) => {
     .paragraph('Zaroori permissions: <b>Can restrict members</b>, <b>Can delete messages</b>, <b>Can pin messages</b>, <b>Can invite users via link</b>.')
     .paragraph(`👤 Support: ${DEV_TAG}`);
 
-  built.buttonRow([{ text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
+  built.buttonRow([{ text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
 
   const fallback =
-    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
-    `⚙️ <b>BOT SETUP</b>\\n\\n` +
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
+    `⚙️ <b>BOT SETUP</b>\n\n` +
     (entries.length === 0
-      ? '⚠️ Abhi koi group ya channel force-sub mein add nahi hai.\\n\\n'
-      : entries.map((c, i) => `${i + 1}. ${htmlEsc(c.title)} (${c.id})${c.username ? ` @${htmlEsc(c.username)}` : ''}`).join('\\n') + '\\n\\n') +
-    `⏳ Users pending verification: <code>${pendingTotal}</code>\\n\\n` +
-    `🤖 Add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\\n` +
-    `Permissions: Can restrict members, Can delete messages, Can pin messages, Can invite users via link.\\n\\n` +
+      ? '⚠️ Abhi koi group ya channel force-sub mein add nahi hai.\n\n'
+      : entries.map((c, i) => `${i + 1}. ${typeIcon(c.type)} ${htmlEsc(c.title)} (${c.id})${c.username ? ` @${htmlEsc(c.username)}` : ''}`).join('\n') + '\n\n') +
+    `⏳ Users pending verification: <code>${pendingTotal}</code>\n\n` +
+    `🤖 Add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
+    `Permissions: Can restrict members, Can delete messages, Can pin messages, Can invite users via link.\n\n` +
     `👤 Support: ${DEV_TAG}`;
 
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
@@ -748,31 +751,37 @@ bot.action('verify_join', async (ctx) => {
 
 // ⌨️ Commands page — opens when user taps the Commands inline button
 bot.action('show_cmds', async (ctx) => {
-  await ctx.answerCbQuery().catch(() => {});
-  const userId = ctx.from.id;
-  const built = new RH()
-    .heading(2, '⌨️ COMMANDS')
-    .table(
-      [
-        ['Command', 'What it does'],
-        ['/start', 'Premium welcome card with images & theme music'],
-        ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
-        ['/delchat id', 'Remove a force-sub channel (owner only)'],
-        ['/listchat', 'List all force-sub channels (owner only)'],
-        ['/verify_join', 'Tap to verify membership & get approved'],
-      ],
-      { bordered: true, striped: true, hasHeader: true, compact: true }
-    )
-    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
-  const fallback =
-    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
-    `⌨️ <b>COMMANDS</b>\n\n` +
-    `• /start — Premium welcome card with images & theme music\n` +
-    `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
-    `• /delchat id — Remove a force-sub channel (owner only)\n` +
-    `• /listchat — List all force-sub channels (owner only)\n` +
-    `• /verify_join — Tap to verify membership & get approved\n\n`;
-  await sendRichCard(ctx, userId, built, fallback, {}, { celebration: false });
+  try {
+    await ctx.answerCbQuery().catch(() => {});
+    const userId = ctx.from.id;
+    const built = new RH()
+      .heading(2, '⌨️ COMMANDS')
+      .table(
+        [
+          ['Command', 'What it does'],
+          ['/start', 'Premium welcome card with images & theme music'],
+          ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
+          ['/delchat id', 'Remove a force-sub channel (owner only)'],
+          ['/listchat', 'List all force-sub channels (owner only)'],
+          ['/verify_join', 'Tap to verify membership & get approved'],
+        ],
+        { bordered: true, striped: true, hasHeader: true, compact: true }
+      )
+      .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
+      `⌨️ <b>COMMANDS</b>\n\n` +
+      `• /start — Premium welcome card with images & theme music\n` +
+      `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
+      `• /delchat id — Remove a force-sub channel (owner only)\n` +
+      `• /listchat — List all force-sub channels (owner only)\n` +
+      `• /verify_join — Tap to verify membership & get approved\n\n`;
+    const msg = await sendRichCard(ctx, userId, built, fallback, {}, { celebration: false });
+    reactToOwn(ctx, msg, '⌨️');
+  } catch (e) {
+    log('error', 'show_cmds failed:', e.message);
+    try { await ctx.answerCbQuery('❌ Menu kholne mein error aaya.', { show_alert: true }); } catch (_) {}
+  }
 });
 
 // 🛡️ Admin permissions page — shows what bot needs when added to channel
