@@ -593,63 +593,6 @@ bot.command('addchat', async (ctx) => {
   }
 });
 
-// 📨 Forward a channel message to add it to force-sub (owner only)
-// Forward any message from a channel to this bot — the channel will be
-// automatically registered as a force-subscribe channel.
-bot.on('message', async (ctx) => {
-  if (ctx.from.id !== OWNER_ID) return await next();
-  const fwd = ctx.message.forward_from_chat;
-  if (!fwd) return await next();
-  if (fwd.type !== 'channel' && fwd.type !== 'supergroup') {
-    const built = new RH()
-      .heading(2, '⚠️ NOT A CHANNEL')
-      .paragraph(`Forwarded chat is <b>${fwd.type}</b>, not a channel.`);
-    const fallback =
-      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
-      `⚠️ <b>NOT A CHANNEL</b>\\n\\n` +
-      `Forwarded chat is ${fwd.type}, not a channel.\\n\\n` +
-      `👤 Support: ${DEV_TAG}`;
-    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
-    return reactToOwn(ctx, msg, '⚠️');
-  }
-  try {
-    const chat = await ctx.telegram.callApi('getChat', { chat_id: fwd.id });
-    DB.forceSub[String(chat.id)] = {
-      title: chat.title || String(chat.id),
-      username: chat.username || null,
-      type: chat.type || 'channel',
-    };
-    saveData();
-    const built = new RH()
-      .heading(2, '✅ CHANNEL ADDED (via forward)')
-      .paragraph(`<b>${htmlEsc(chat.title || String(chat.id))}</b> <code>(${chat.id})</code> is now a force-subscribe channel.`)
-      .paragraph(`Type: ${chat.type || 'channel'}`)
-      .paragraph('Members must join this channel before they can be approved.');
-    const fallback =
-      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
-      `✅ <b>CHANNEL ADDED (via forward)</b>\\n\\n` +
-      `${htmlEsc(chat.title || String(chat.id))} (${chat.id}) is now a force-subscribe channel.\\n` +
-      `Type: ${chat.type || 'channel'}\\n\\n` +
-      `👤 Support: ${DEV_TAG}`;
-    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
-    reactToOwn(ctx, msg, '👑');
-  } catch (e) {
-    const built = new RH()
-      .heading(2, '🚫 FAILED')
-      .paragraph(`Could not add that channel.`)
-      .paragraph(`Make sure the bot is a member/admin there.`)
-      .paragraph(`<code>${htmlEsc(e.message)}</code>`);
-    const fallback =
-      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
-      `🚫 <b>FAILED</b>\\n\\n` +
-      `Could not add that channel.\\nMake sure the bot is a member/admin there.\\n\\n<code>${htmlEsc(e.message)}</code>\\n\\n` +
-      `👤 Support: ${DEV_TAG}`;
-    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
-    reactToOwn(ctx, msg, '🚫');
-  }
-  await next();
-});
-
 // /delchat — owner removes a force-sub channel/group
 bot.command('delchat', async (ctx) => {
   if (ctx.from.id !== OWNER_ID) return;
@@ -775,6 +718,88 @@ bot.command('set', async (ctx) => {
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⚙️');
 });
+
+// /verify_join — tells users to tap VERIFY button (listed in /menu as a command)
+bot.command('verify_join', async (ctx) => {
+  if (ctx.from.id !== OWNER_ID) return;
+  const built = new RH()
+    .heading(2, '✅ VERIFY JOIN')
+    .paragraph('VERIFY button ka use karne ke liye:')
+    .paragraph('1. Private channel mein join request bhejein')
+    .paragraph('2. Bot aapko verify card bhejega ✅ VERIFY button ke saath')
+    .paragraph('3. VERIFY button tap karein — aap approve ho jayenge')
+    .paragraph('Ya channel ka koi message forward karein channel add karne ke liye.');
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
+    `✅ <b>VERIFY JOIN</b>\n\n` +
+    `VERIFY button ka use karne ke liye:\n` +
+    `1. Private channel mein join request bhejein\n` +
+    `2. Bot aapko verify card bhejega ✅ VERIFY button ke saath\n` +
+    `3. VERIFY button tap karein — aap approve ho jayenge\n\n` +
+    `👤 Support: ${DEV_TAG}`;
+  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+  reactToOwn(ctx, msg, '✅');
+});
+
+
+// 📨 Forward a channel message to add it to force-sub (owner only)
+// Forward any message from a channel to this bot — the channel will be
+// automatically registered as a force-subscribe channel.
+bot.on('message', async (ctx) => {
+  if (ctx.from.id !== OWNER_ID) return await next();
+  const fwd = ctx.message.forward_from_chat;
+  if (!fwd) return await next();
+  if (fwd.type !== 'channel' && fwd.type !== 'supergroup') {
+    const built = new RH()
+      .heading(2, '⚠️ NOT A CHANNEL')
+      .paragraph(`Forwarded chat is <b>${fwd.type}</b>, not a channel.`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+      `⚠️ <b>NOT A CHANNEL</b>\\n\\n` +
+      `Forwarded chat is ${fwd.type}, not a channel.\\n\\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+    return reactToOwn(ctx, msg, '⚠️');
+  }
+  try {
+    const chat = await ctx.telegram.callApi('getChat', { chat_id: fwd.id });
+    DB.forceSub[String(chat.id)] = {
+      title: chat.title || String(chat.id),
+      username: chat.username || null,
+      type: chat.type || 'channel',
+    };
+    saveData();
+    const built = new RH()
+      .heading(2, '✅ CHANNEL ADDED (via forward)')
+      .paragraph(`<b>${htmlEsc(chat.title || String(chat.id))}</b> <code>(${chat.id})</code> is now a force-subscribe channel.`)
+      .paragraph(`Type: ${chat.type || 'channel'}`)
+      .paragraph('Members must join this channel before they can be approved.');
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+      `✅ <b>CHANNEL ADDED (via forward)</b>\\n\\n` +
+      `${htmlEsc(chat.title || String(chat.id))} (${chat.id}) is now a force-subscribe channel.\\n` +
+      `Type: ${chat.type || 'channel'}\\n\\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+    reactToOwn(ctx, msg, '👑');
+  } catch (e) {
+    const built = new RH()
+      .heading(2, '🚫 FAILED')
+      .paragraph(`Could not add that channel.`)
+      .paragraph(`Make sure the bot is a member/admin there.`)
+      .paragraph(`<code>${htmlEsc(e.message)}</code>`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+      `🚫 <b>FAILED</b>\\n\\n` +
+      `Could not add that channel.\\nMake sure the bot is a member/admin there.\\n\\n<code>${htmlEsc(e.message)}</code>\\n\\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+    reactToOwn(ctx, msg, '🚫');
+  }
+  await next();
+});
+
+
 
 // noop callback
 bot.action('noop', (ctx) => ctx.answerCbQuery().catch(() => {}));
