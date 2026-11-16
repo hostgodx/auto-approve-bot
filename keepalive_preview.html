@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AUTO APPROVE — ONLINE</title>
+<style>
+  :root { --glow: #7c5cff; --bg: #0b0b14; --card: #14141f; --txt: #f2f0ff; --dim: #8a87a8; --ok: #35e0a1; }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  body { min-height: 100vh; background: radial-gradient(1200px 600px at 50% -10%, #241a4d 0%, var(--bg) 60%); color: var(--txt);
+         display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .orb { position: fixed; border-radius: 50%; filter: blur(90px); opacity: .45; z-index: 0; animation: drift 12s ease-in-out infinite alternate; }
+  .orb.a { width: 340px; height: 340px; background: #5a2bff; top: -80px; left: -80px; }
+  .orb.b { width: 300px; height: 300px; background: #b03bff; bottom: -70px; right: -70px; animation-delay: -6s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(60px,40px) scale(1.15); } }
+  .card { position: relative; z-index: 1; background: rgba(20,20,31,.82); border: 1px solid rgba(124,92,255,.35);
+          border-radius: 22px; padding: 42px 48px; text-align: center; max-width: 480px; width: 92%;
+          box-shadow: 0 0 60px rgba(124,92,255,.35), inset 0 0 40px rgba(124,92,255,.08); backdrop-filter: blur(12px); }
+  .badge { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: 2px; color: var(--ok);
+           border: 1px solid rgba(53,224,161,.4); background: rgba(53,224,161,.08); padding: 6px 16px; border-radius: 999px; margin-bottom: 22px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 12px var(--ok); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  h1 { font-size: 30px; font-weight: 800; letter-spacing: 1px;
+       background: linear-gradient(135deg, #c9b8ff 0%, #7c5cff 45%, #b03bff 100%);
+       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+  .sub { color: var(--dim); font-size: 13px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 26px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 14px 8px; }
+  .stat .v { font-size: 18px; font-weight: 700; color: #d9d2ff; font-variant-numeric: tabular-nums; }
+  .stat .k { font-size: 10px; color: var(--dim); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 4px; }
+  .bar { height: 4px; border-radius: 4px; background: rgba(255,255,255,.06); overflow: hidden; margin-bottom: 18px; }
+  .bar > div { height: 100%; width: 40%; background: linear-gradient(90deg, #7c5cff, #b03bff); animation: slide 2.4s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+  .foot { color: var(--dim); font-size: 11px; letter-spacing: 2px; }
+  .foot b { color: #a99ee8; }
+</style>
+</head>
+<body>
+  <div class="orb a"></div><div class="orb b"></div>
+  <div class="card">
+    <div class="badge"><span class="dot"></span>ONLINE</div>
+    <h1>『 AUTO APPROVE 』</h1>
+    <div class="sub">Auto Approval Engine</div>
+    <div class="grid">
+      <div class="stat"><div class="v" id="uptime">—</div><div class="k">Uptime</div></div>
+      <div class="stat"><div class="v" id="hits">—</div><div class="k">Pings</div></div>
+      <div class="stat"><div class="v" id="status">OK</div><div class="k">Status</div></div>
+    </div>
+    <div class="bar"><div></div></div>
+    <div class="foot">✦ <b>AUTO APPROVE</b> • SECURE • VERIFIED ✦</div>
+  </div>
+<script>
+  async function tick() {
+    try {
+      const r = await fetch('/health'); const d = await r.json();
+      document.getElementById('uptime').textContent = d.uptime;
+      document.getElementById('hits').textContent = d.requests;
+      document.getElementById('status').textContent = 'OK';
+    } catch (e) { document.getElementById('status').textContent = 'DOWN'; }
+  }
+  tick(); setInterval(tick, 15000);
+</script>
+</body>
+</html>
