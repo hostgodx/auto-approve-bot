@@ -486,7 +486,8 @@ bot.command('menu', async (ctx) => {
       ],
       { bordered: true, striped: true, hasHeader: true, compact: true }
     )
-    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
+    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`)
+    .buttonRow([{ text: '➕ Add Channel/Group', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
@@ -495,7 +496,9 @@ bot.command('menu', async (ctx) => {
     `• /delchat id — Remove a force-sub channel (owner only)\n` +
     `• /listchat — List all force-sub channels (owner only)\n` +
     `• /verify_join — Tap to verify membership & get approved\n` +
-    `• /menu — Show this commands page\n\n`;
+    `• /menu — Show this commands page\n\n` +
+    `🤖 Channel/Group mein bot add karne ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
+    `Dialog mein apna CHANNEL ya GROUP select karein, phir bot ko admin banayein.\n\n`;
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⌨️');
 });
@@ -559,12 +562,15 @@ bot.command('addchat', async (ctx) => {
     const built = new RH()
       .heading(2, '✅ CHANNEL ADDED')
       .paragraph(`<b>${htmlEsc(chat.title || String(chat.id))}</b> <code>(${chat.id})</code> is now a force-subscribe channel.`)
-      .paragraph(`Type: ${chat.type || 'group'}`);
+      .paragraph(`Type: ${chat.type || 'group'}`)
+    .buttonRow([{ text: '🤖 Add Bot as Admin', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
     const fallback =
       `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `✅ <b>CHANNEL ADDED</b>\n\n` +
       `${htmlEsc(chat.title || String(chat.id))} (${chat.id}) is now a force-subscribe channel.\n` +
       `Type: ${chat.type || 'group'}\n\n` +
+      `🤖 Bot ko admin banane ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
+      `Dialog mein ${htmlEsc(chat.title || String(chat.id))} select karein, phir bot ko admin banayein.\n\n` +
       `👤 Support: ${DEV_TAG}`;
     const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     reactToOwn(ctx, msg, '👑');
