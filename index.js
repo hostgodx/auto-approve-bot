@@ -346,14 +346,14 @@ const buildWelcome = (user) => {
       '<p>⚠️ Faking membership is impossible — the bot verifies it live.</p>')
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
     .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME))
-    .paragraph('⚠️ <b>IMPORTANT:</b> Button se Telegram dialog khulega — wahan apna <b>CHANNEL ya GROUP</b> select karein, phir bot ko <b>admin</b> banayein.');
+    .paragraph('⚠️ <b>IMPORTANT:</b> Button se Telegram dialog khulega — wahan apna <b>CHANNEL</b> select karein (group nahi), phir bot ko <b>admin</b> banayein. Auto-approval sirf channel par kaam karega.');
 
   // Three inline buttons: 2 on top row, 1 below
   const ownerId = process.env.OWNER_ID || '';
   rich.buttonRow(
     [
       { text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' },
-      { text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
+      { text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'secondary' },
     ],
     'center'
   );
@@ -490,7 +490,7 @@ bot.command('menu', async (ctx) => {
       { bordered: true, striped: true, hasHeader: true, compact: true }
     )
     .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`)
-    .buttonRow([{ text: '➕ Add Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
+    .buttonRow([{ text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
@@ -500,8 +500,8 @@ bot.command('menu', async (ctx) => {
     `• /listchat — List all force-sub channels (owner only)\n` +
     `• /verify_join — Tap to verify membership and get approved\n` +
     `• /menu — Show this commands page\n\n` +
-    `🤖 Channel/Group mein bot add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
-    `Dialog mein apna CHANNEL ya GROUP select karein, phir bot ko admin banayein.\n\n`;
+    `🤖 Channel mein bot add karne ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
+    `Dialog mein apna CHANNEL select karein (group nahi), phir bot ko admin banayein.\n\n`;
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⌨️');
 });
@@ -566,13 +566,13 @@ bot.command('addchat', async (ctx) => {
       .heading(2, '✅ CHANNEL ADDED')
       .paragraph(`<b>${htmlEsc(chat.title || String(chat.id))}</b> <code>(${chat.id})</code> is now a force-subscribe channel.`)
       .paragraph(`Type: ${chat.type || 'group'}`)
-    .buttonRow([{ text: '🤖 Add Bot as Admin', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
+    .buttonRow([{ text: '🤖 Add Bot as Admin', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
     const fallback =
       `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `✅ <b>CHANNEL ADDED</b>\n\n` +
       `${htmlEsc(chat.title || String(chat.id))} (${chat.id}) is now a force-subscribe channel.\n` +
       `Type: ${chat.type || 'group'}\n\n` +
-      `🤖 Bot ko admin banane ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
+      `🤖 Bot ko admin banane ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
       `Dialog mein ${htmlEsc(chat.title || String(chat.id))} select karein, phir bot ko admin banayein.\n\n` +
       `👤 Support: ${DEV_TAG}`;
     const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
@@ -587,6 +587,62 @@ bot.command('addchat', async (ctx) => {
       `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `🚫 <b>FAILED</b>\n\n` +
       `Could not resolve that chat.\nMake sure the bot is a member/admin there.\n\n<code>${htmlEsc(e.message)}</code>\n\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+    reactToOwn(ctx, msg, '🚫');
+  }
+});
+
+// 📨 Forward a channel message to add it to force-sub (owner only)
+// Forward any message from a channel to this bot — the channel will be
+// automatically registered as a force-subscribe channel.
+bot.on('message', async (ctx) => {
+  if (ctx.from.id !== OWNER_ID) return;
+  const fwd = ctx.message.forward_from_chat;
+  if (!fwd) return;
+  if (fwd.type !== 'channel' && fwd.type !== 'supergroup') {
+    const built = new RH()
+      .heading(2, '⚠️ NOT A CHANNEL')
+      .paragraph(`Forwarded chat is <b>${fwd.type}</b>, not a channel.`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+      `⚠️ <b>NOT A CHANNEL</b>\\n\\n` +
+      `Forwarded chat is ${fwd.type}, not a channel.\\n\\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+    return reactToOwn(ctx, msg, '⚠️');
+  }
+  try {
+    const chat = await ctx.telegram.callApi('getChat', { chat_id: fwd.id });
+    DB.forceSub[String(chat.id)] = {
+      title: chat.title || String(chat.id),
+      username: chat.username || null,
+      type: chat.type || 'channel',
+    };
+    saveData();
+    const built = new RH()
+      .heading(2, '✅ CHANNEL ADDED (via forward)')
+      .paragraph(`<b>${htmlEsc(chat.title || String(chat.id))}</b> <code>(${chat.id})</code> is now a force-subscribe channel.`)
+      .paragraph(`Type: ${chat.type || 'channel'}`)
+      .paragraph('Members must join this channel before they can be approved.');
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+      `✅ <b>CHANNEL ADDED (via forward)</b>\\n\\n` +
+      `${htmlEsc(chat.title || String(chat.id))} (${chat.id}) is now a force-subscribe channel.\\n` +
+      `Type: ${chat.type || 'channel'}\\n\\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+    reactToOwn(ctx, msg, '👑');
+  } catch (e) {
+    const built = new RH()
+      .heading(2, '🚫 FAILED')
+      .paragraph(`Could not add that channel.`)
+      .paragraph(`Make sure the bot is a member/admin there.`)
+      .paragraph(`<code>${htmlEsc(e.message)}</code>`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+      `🚫 <b>FAILED</b>\\n\\n` +
+      `Could not add that channel.\\nMake sure the bot is a member/admin there.\\n\\n<code>${htmlEsc(e.message)}</code>\\n\\n` +
       `👤 Support: ${DEV_TAG}`;
     const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     reactToOwn(ctx, msg, '🚫');
@@ -697,11 +753,11 @@ bot.command('set', async (ctx) => {
 
   built.divider()
     .blockQuote('🤖 Bot ko apne CHANNEL mein admin banane ke liye:')
-    .paragraph('Niche button se Telegram dialog khulega — wahan apna <b>CHANNEL ya GROUP</b> select karein, phir bot ko <b>admin</b> banayein.')
+    .paragraph('Niche button se Telegram dialog khulega — wahan apna <b>CHANNEL</b> select karein (group nahi), phir bot ko <b>admin</b> banayein. Auto-approval sirf channel par kaam karega.')
     .paragraph('Zaroori permissions: <b>Can restrict members</b>, <b>Can delete messages</b>, <b>Can pin messages</b>, <b>Can invite users via link</b>.')
     .paragraph(`👤 Support: ${DEV_TAG}`);
 
-  built.buttonRow([{ text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
+  built.buttonRow([{ text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
 
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
@@ -710,8 +766,8 @@ bot.command('set', async (ctx) => {
       ? '⚠️ Abhi koi group ya channel force-sub mein add nahi hai.\n\n'
       : entries.map((c, i) => `${i + 1}. ${typeIcon(c.type)} ${htmlEsc(c.title)} (${c.id})${c.username ? ` @${htmlEsc(c.username)}` : ''}`).join('\n') + '\n\n') +
     `⏳ Users pending verification: <code>${pendingTotal}</code>\n\n` +
-    `🤖 Apne CHANNEL ya GROUP mein add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
-    `Dialog mein CHANNEL ya GROUP select karein, phir bot ko admin banayein.\n` +
+    `🤖 Apne CHANNEL mein add karne ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
+    `Dialog mein apna CHANNEL select karein (group nahi), phir bot ko admin banayein.\n` +
     `Permissions: Can restrict members, Can delete messages, Can pin messages, Can invite users via link.\n\n` +
     `👤 Support: ${DEV_TAG}`;
 
