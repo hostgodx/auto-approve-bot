@@ -597,9 +597,9 @@ bot.command('addchat', async (ctx) => {
 // Forward any message from a channel to this bot — the channel will be
 // automatically registered as a force-subscribe channel.
 bot.on('message', async (ctx) => {
-  if (ctx.from.id !== OWNER_ID) return;
+  if (ctx.from.id !== OWNER_ID) return await next();
   const fwd = ctx.message.forward_from_chat;
-  if (!fwd) return;
+  if (!fwd) return await next();
   if (fwd.type !== 'channel' && fwd.type !== 'supergroup') {
     const built = new RH()
       .heading(2, '⚠️ NOT A CHANNEL')
@@ -647,6 +647,7 @@ bot.on('message', async (ctx) => {
     const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     reactToOwn(ctx, msg, '🚫');
   }
+  await next();
 });
 
 // /delchat — owner removes a force-sub channel/group
