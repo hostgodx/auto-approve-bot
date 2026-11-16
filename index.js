@@ -345,12 +345,43 @@ const buildWelcome = (user) => {
       '<p>⚠️ Faking membership is impossible — the bot verifies it live.</p>')
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
     .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME));
-  if (LISTEN_LINK && OFFICIAL_LISTEN_URL) {
+
+  // Owner contact — premium emoji concat
+  const ownerId = process.env.OWNER_ID || '';
+  if (ownerId) {
     rich.buttonRow(
-      [{ text: '▶️  Nazra Ke Teer — Official Video', url: OFFICIAL_LISTEN_URL, style: 'primary' }],
+      [{ text: '👑 Owner Contact', url: `tg://user?id=${ownerId}`, style: 'primary' }],
       'center'
     );
   }
+
+  // Commands section — designed
+  rich
+    .divider()
+    .heading(2, '⌨️ COMMANDS')
+    .table(
+      [
+        ['Command', 'What it does'],
+        ['/start', 'Premium welcome card with images & theme music'],
+        ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
+        ['/delchat id', 'Remove a force-sub channel (owner only)'],
+        ['/listchat', 'List all force-sub channels (owner only)'],
+        ['/verify_join', 'Tap to verify membership & get approved'],
+      ],
+      { bordered: true, striped: true, hasHeader: true, compact: true }
+    )
+    .paragraph(
+      `💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`
+    );
+
+  // Second inline button — support channel
+  if (DEV_TAG) {
+    rich.buttonRow(
+      [{ text: `📢 ${DEV_TAG}`, url: `t.me/${DEV_TAG.replace('@', '')}`, style: 'secondary' }],
+      'center'
+    );
+  }
+
   rich.footer(footerHtml());
 
   return {
@@ -369,14 +400,9 @@ const buildWelcome = (user) => {
         '⚡ Instant approval  •  🛡️ Force-sub gate\n' +
         '🟢 24/7 online  •  🎵 Welcome theme song\n' +
         (DEV_TAG ? `💬 Support: ${htmlEsc(DEV_TAG)}` : '')) +
-      `\n\n<blockquote>${FANCY('F A S T   •   S E C U R E   •   P R E M I U M', 'mono')}</blockquote>\n\n` +
-      (LISTEN_LINK && OFFICIAL_LISTEN_URL
-        ? `▶️ <a href="${OFFICIAL_LISTEN_URL}"><b>Nazra Ke Teer — Official Video</b></a>\n\n`
-        : '') +
       `${footerHtml()}`,
-  };
 };
-
+};
 const buildVerify = (name) => ({
   built: new RH()
     .heading(2, '⚠️ VERIFICATION REQUIRED')
