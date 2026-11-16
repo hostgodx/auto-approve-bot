@@ -477,11 +477,11 @@ bot.command('menu', async (ctx) => {
     .table(
       [
         ['Command', 'What it does'],
-        ['/start', 'Premium welcome card with images & theme music'],
+        ['/start', 'Premium welcome card with images and theme music'],
         ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
         ['/delchat id', 'Remove a force-sub channel (owner only)'],
         ['/listchat', 'List all force-sub channels (owner only)'],
-        ['/verify_join', 'Tap to verify membership & get approved'],
+        ['/verify_join', 'Tap to verify membership and get approved'],
         ['/menu', 'Show this commands page'],
       ],
       { bordered: true, striped: true, hasHeader: true, compact: true }
@@ -491,11 +491,11 @@ bot.command('menu', async (ctx) => {
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
-    `• /start — Premium welcome card with images & theme music\n` +
+    `• /start — Premium welcome card with images and theme music\n` +
     `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
     `• /delchat id — Remove a force-sub channel (owner only)\n` +
     `• /listchat — List all force-sub channels (owner only)\n` +
-    `• /verify_join — Tap to verify membership & get approved\n` +
+    `• /verify_join — Tap to verify membership and get approved\n` +
     `• /menu — Show this commands page\n\n` +
     `🤖 Channel/Group mein bot add karne ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
     `Dialog mein apna CHANNEL ya GROUP select karein, phir bot ko admin banayein.\n\n`;
@@ -510,11 +510,11 @@ bot.help(async (ctx) => {
     .table(
       [
         ['Command', 'What it does'],
-        ['/start', 'Premium welcome card with images & theme music'],
+        ['/start', 'Premium welcome card with images and theme music'],
         ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
         ['/delchat id', 'Remove a force-sub channel (owner only)'],
         ['/listchat', 'List all force-sub channels (owner only)'],
-        ['/verify_join', 'Tap to verify membership & get approved'],
+        ['/verify_join', 'Tap to verify membership and get approved'],
         ['/menu', 'Show this commands page'],
       ],
       { bordered: true, striped: true, hasHeader: true, compact: true }
@@ -523,11 +523,11 @@ bot.help(async (ctx) => {
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `📖 <b>HELP</b>\n\n` +
-    `• /start — Premium welcome card with images & theme music\n` +
+    `• /start — Premium welcome card with images and theme music\n` +
     `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
     `• /delchat id — Remove a force-sub channel (owner only)\n` +
     `• /listchat — List all force-sub channels (owner only)\n` +
-    `• /verify_join — Tap to verify membership & get approved\n` +
+    `• /verify_join — Tap to verify membership and get approved\n` +
     `• /menu — Show this commands page\n\n`;
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⚡');
@@ -818,11 +818,11 @@ bot.action('show_cmds', async (ctx) => {
       .table(
         [
           ['Command', 'What it does'],
-          ['/start', 'Premium welcome card with images & theme music'],
+          ['/start', 'Premium welcome card with images and theme music'],
           ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
           ['/delchat id', 'Remove a force-sub channel (owner only)'],
           ['/listchat', 'List all force-sub channels (owner only)'],
-          ['/verify_join', 'Tap to verify membership & get approved'],
+          ['/verify_join', 'Tap to verify membership and get approved'],
         ],
         { bordered: true, striped: true, hasHeader: true, compact: true }
       )
@@ -830,11 +830,11 @@ bot.action('show_cmds', async (ctx) => {
     const fallback =
       `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `⌨️ <b>COMMANDS</b>\n\n` +
-      `• /start — Premium welcome card with images & theme music\n` +
+      `• /start — Premium welcome card with images and theme music\n` +
       `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
       `• /delchat id — Remove a force-sub channel (owner only)\n` +
       `• /listchat — List all force-sub channels (owner only)\n` +
-      `• /verify_join — Tap to verify membership & get approved\n\n`;
+      `• /verify_join — Tap to verify membership and get approved\n\n`;
     const msg = await sendRichCard(ctx, userId, built, fallback, {}, { celebration: false });
     reactToOwn(ctx, msg, '⌨️');
   } catch (e) {
