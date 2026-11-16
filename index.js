@@ -125,8 +125,12 @@ const FANCY = (() => {
     bold: build(0x1D400, 0x1D41A, 0x1D7CE),   // 𝗦𝗘𝗥𝗜𝗙 𝗕𝗢𝗟𝗗
     sans: build(0x1D5D4, 0x1D5EE, 0x1D7EC),   // 𝗦𝗔𝗡𝗦 𝗕𝗢𝗟𝗗
     mono: build(0x1D670, 0x1D68A, 0x1D7F6),   // 𝚖𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎
+    script: build(0x1D4D0, 0x1D4EA, 0x1D7CE), // 𝓈𝖼𝗋𝗂𝗉𝗍
+    fraktur: build(0x1D504, 0x1D51E, 0x1D7CE),// 𝔣𝔯𝔞𝔨𝔱𝔲𝔯
+    double: build(0x1D538, 0x1D552, 0x1D7CE), // 𝕕𝕠𝕦𝕓𝕝𝕖 𝕤𝕥𝕣𝕦𝕔𝕜
+    bfractur: build(0x1D56C, 0x1D586, 0x1D7CE),// 𝖇𝖔𝖑𝖉 𝖋𝖗𝖆𝖐𝖙𝖚𝖗
   };
-  return (text, font = 'sans') => {
+  return (text, font = 'bold') => {
     const m = fonts[font] || fonts.sans;
     return String(text).split('').map((c) => m[c] || c).join('');
   };
@@ -175,7 +179,7 @@ function saveData() {
 
 // ───────────────── Rich card helpers ─────────────────
 function footerHtml() {
-  const brandText = FANCY(htmlEsc(BRAND_NAME).toUpperCase(), 'sans');
+  const brandText = FANCY(htmlEsc(BRAND_NAME).toUpperCase(), 'bold');
   const brand = BRAND_LINK
     ? `<a href="${BRAND_LINK}">${brandText}</a>`
     : `<b>${brandText}</b>`;
@@ -307,13 +311,10 @@ const buildWelcome = (user) => {
   const handle = uname ? ` · ${htmlEsc(uname)}` : '';
 
   const rich = new RH()
-    .heading(1, '👑 AUTO APPROVAL BOT')
+    .heading(1, `👑 ${FANCY(htmlEsc(BRAND_NAME).toUpperCase(), 'bold')}`)
     .paragraph(`Welcome, ${mention}${handle} 🎉`)
-    .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
-  if (WELCOME_IMAGE) {
-    if (WELCOME_IMAGE2_URL) rich.photo(WELCOME_IMAGE2_URL);
-    if (WELCOME_IMAGE3_URL) rich.photo(WELCOME_IMAGE3_URL);
-  }
+    .paragraph(RH.italic(FANCY('Premium auto-approval engine for exclusive channels — built for VIPs.', 'script')));
+  if (WELCOME_IMAGE && WELCOME_IMAGE_URL) rich.photo(WELCOME_IMAGE_URL, `👑  ${htmlEsc(BRAND_NAME)}`);
   if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
     .divider()
@@ -363,7 +364,7 @@ const buildWelcome = (user) => {
   return {
     built: rich.build(),
     fallback:
-      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `👑 <b>Welcome, ${mention}${handle}!</b>\n\n` +
       `🤖 I'm the <b>Auto Approval Bot</b> — I verify and approve join requests for the private channel.\n\n` +
       cardShell('📌  <b>HOW IT WORKS</b>',
@@ -456,7 +457,7 @@ bot.start(async (ctx) => {
 
   // ✦ Welcome Theme music — plays inline in the chat
   if (WELCOME_AUDIO && fs.existsSync(WELCOME_AUDIO_FILE)) {
-    const caption = `🎵  Welcome, ${htmlEsc((ctx.from && ctx.from.first_name) || 'User')}!  ${FANCY('AUTO APPROVAL BOT', 'sans')}`;
+    const caption = `🎵  Welcome, ${htmlEsc((ctx.from && ctx.from.first_name) || 'User')}!  ${FANCY('AUTO APPROVAL BOT', 'bold')}`;
     const audioOpts = {
       caption,
       parse_mode: 'HTML',
@@ -487,7 +488,7 @@ bot.command('menu', async (ctx) => {
     )
     .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
   const fallback =
-    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
     `• /start — Premium welcome card with images & theme music\n` +
     `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
@@ -517,7 +518,7 @@ bot.help(async (ctx) => {
     )
 ;
   const fallback =
-    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `📖 <b>HELP</b>\n\n` +
     `• /start — Premium welcome card with images & theme music\n` +
     `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
@@ -539,7 +540,7 @@ bot.command('addchat', async (ctx) => {
       .paragraph(`Usage: <code>/addchat @username</code>  or  <code>/addchat -1001234567890</code>`)
       .footer(footerHtml());
     const fallback =
-      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `⚠️ <b>USAGE</b>\n\n` +
       `Usage: /addchat @username  or  /addchat -1001234567890\n\n` +
       `${footerHtml()}`;
@@ -574,7 +575,7 @@ bot.command('delchat', async (ctx) => {
       .paragraph(`Usage: <code>/delchat -1001234567890</code>`)
       .footer(footerHtml());
     const fallback =
-      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `⚠️ <b>USAGE</b>\n\n` +
       `Usage: /delchat -1001234567890\n\n` +
       `${footerHtml()}`;
@@ -721,7 +722,7 @@ bot.action('show_cmds', async (ctx) => {
     )
     .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
   const fallback =
-    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
     `• /start — Premium welcome card with images & theme music\n` +
     `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
@@ -752,7 +753,7 @@ bot.action('show_admin_perms', async (ctx) => {
     .paragraph('⚠️ Bina in permissions ke bot join requests approve nahi kar payega.')
     .paragraph(`👤 Owner: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
   const fallback =
-    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `🤖 <b>ADD BOT AS ADMIN</b>\n\n` +
     `Bot ko channel/group mein admin banane ke liye ye permissions ON karein:\n\n` +
     `• Can restrict members — Join requests approve/reject karne ke liye\n` +
