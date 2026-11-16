@@ -311,9 +311,9 @@ const buildWelcome = (user) => {
     .paragraph(`Welcome, ${mention}${handle} 🎉`)
     .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
   if (WELCOME_IMAGE) {
-    if (WELCOME_IMAGE_URL) rich.photo(WELCOME_IMAGE_URL, `👑  ${htmlEsc(BRAND_NAME)}`);
-    if (WELCOME_IMAGE2_URL) rich.photo(WELCOME_IMAGE2_URL, '🖼️');
-    if (WELCOME_IMAGE3_URL) rich.photo(WELCOME_IMAGE3_URL, '🖼️');
+    const imgs = [WELCOME_IMAGE2_URL, WELCOME_IMAGE3_URL].filter(Boolean);
+    if (imgs.length === 1) rich.photo(imgs[0]);
+    else if (imgs.length >= 2) rich.slideshow(...imgs);
   }
   if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
@@ -346,18 +346,20 @@ const buildWelcome = (user) => {
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
     .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME));
 
-  // Three inline buttons the user wants: Menu, Add Me to Channel, Contact Owner
+  // Three inline buttons: 2 on top row, 1 below
   const ownerId = process.env.OWNER_ID || '';
-  const botUsername = process.env.BOT_USERNAME || 'auto_approve_bot';
-  const btns = [];
-  btns.push({ text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' });
-  btns.push({ text: '➕ Add Me to Channel', url: `https://t.me/${botUsername}?startchannel=true`, style: 'secondary' });
+  rich.buttonRow(
+    [
+      { text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' },
+      { text: '➕ Add Me to Channel', callbackData: 'show_admin_perms', style: 'secondary' },
+    ],
+    'center'
+  );
   if (ownerId) {
-    btns.push({ text: '👑 Contact Owner', url: `tg://user?id=${ownerId}`, style: 'primary' });
+    rich.buttonRow([{ text: '👑 Contact Owner', url: `tg://user?id=${ownerId}`, style: 'primary' }], 'center');
   }
-  rich.buttonRow(btns, 'center');
 
-  rich.footer(footerHtml());
+  // NO footer — removed per user request
 
   return {
     built: rich.build(),
@@ -374,8 +376,7 @@ const buildWelcome = (user) => {
       cardShell('✨  <b>WHY YOU’LL LOVE IT</b>',
         '⚡ Instant approval  •  🛡️ Force-sub gate\n' +
         '🟢 24/7 online  •  🎵 Welcome theme song\n' +
-        (DEV_TAG ? `💬 Support: ${htmlEsc(DEV_TAG)}` : '')) +
-      `${footerHtml()}`,
+        (DEV_TAG ? `💬 Support: ${htmlEsc(DEV_TAG)}` : '')),
 };
 };
 const buildVerify = (name) => ({
@@ -485,8 +486,7 @@ bot.command('menu', async (ctx) => {
       ],
       { bordered: true, striped: true, hasHeader: true, compact: true }
     )
-    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`)
-    .footer(footerHtml());
+    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
@@ -495,8 +495,7 @@ bot.command('menu', async (ctx) => {
     `• /delchat id — Remove a force-sub channel (owner only)\n` +
     `• /listchat — List all force-sub channels (owner only)\n` +
     `• /verify_join — Tap to verify membership & get approved\n` +
-    `• /menu — Show this commands page\n\n` +
-    `${footerHtml()}`;
+    `• /menu — Show this commands page\n\n`;
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⌨️');
 });
@@ -517,7 +516,7 @@ bot.help(async (ctx) => {
       ],
       { bordered: true, striped: true, hasHeader: true, compact: true }
     )
-    .footer(footerHtml());
+;
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
     `📖 <b>HELP</b>\n\n` +
@@ -526,8 +525,7 @@ bot.help(async (ctx) => {
     `• /delchat id — Remove a force-sub channel (owner only)\n` +
     `• /listchat — List all force-sub channels (owner only)\n` +
     `• /verify_join — Tap to verify membership & get approved\n` +
-    `• /menu — Show this commands page\n\n` +
-    `${footerHtml()}`;
+    `• /menu — Show this commands page\n\n`;
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⚡');
 });
@@ -722,8 +720,7 @@ bot.action('show_cmds', async (ctx) => {
       ],
       { bordered: true, striped: true, hasHeader: true, compact: true }
     )
-    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`)
-    .footer(footerHtml());
+    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
@@ -731,9 +728,42 @@ bot.action('show_cmds', async (ctx) => {
     `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
     `• /delchat id — Remove a force-sub channel (owner only)\n` +
     `• /listchat — List all force-sub channels (owner only)\n` +
-    `• /verify_join — Tap to verify membership & get approved\n\n` +
-    `${footerHtml()}`;
+    `• /verify_join — Tap to verify membership & get approved\n\n`;
   await sendRichCard(ctx, userId, built, fallback, {}, { celebration: false });
+});
+
+// 🛡️ Admin permissions page — shows what bot needs when added to channel
+bot.action('show_admin_perms', async (ctx) => {
+  await ctx.answerCbQuery().catch(() => {});
+  const built = new RH()
+    .heading(2, '🤖 ADD BOT AS ADMIN')
+    .blockQuote('Bot ko channel/group mein admin banane ke liye ye permissions ON karein:')
+    .divider()
+    .table(
+      [
+        ['Permission', 'Kyon zaroori hai'],
+        ['Can restrict members', 'Join requests approve/reject karne ke liye'],
+        ['Can delete messages', 'Spam aur galat messages hataane ke liye'],
+        ['Can pin messages', 'Zaroori notices pin karne ke liye'],
+        ['Can invite users via link', 'Naye members ko invite link se jodne ke liye'],
+        ['Can change chat info', 'Channel ka naam/photo update karne ke liye (optional)'],
+      ],
+      { bordered: true, striped: true, hasHeader: true, compact: true }
+    )
+    .paragraph('⚠️ Bina in permissions ke bot join requests approve nahi kar payega.')
+    .paragraph(`👤 Owner: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`);
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `🤖 <b>ADD BOT AS ADMIN</b>\n\n` +
+    `Bot ko channel/group mein admin banane ke liye ye permissions ON karein:\n\n` +
+    `• Can restrict members — Join requests approve/reject karne ke liye\n` +
+    `• Can delete messages — Spam hataane ke liye\n` +
+    `• Can pin messages — Notices pin karne ke liye\n` +
+    `• Can invite users via link — Naye members jodne ke liye\n` +
+    `• Can change chat info — Channel update karne ke liye (optional)\n\n` +
+    `⚠️ Bina in permissions ke bot join requests approve nahi kar payega.\n\n` +
+    `👤 Owner: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`;
+  await sendRichCard(ctx, ctx.from.id, built, fallback, {}, { celebration: false });
 });
 
 // ───────────────── Keep-alive server (Render + UptimeRobot) ─────────────────
