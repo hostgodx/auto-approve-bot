@@ -555,12 +555,30 @@ bot.command('addchat', async (ctx) => {
       type: chat.type || 'group', // 'channel', 'group', 'supergroup'
     };
     saveData();
-    const msg = await ctx.replyWithHTML(
-      fallbackSuccess('CHANNEL ADDED', `<b>${htmlEsc(chat.title || String(chat.id))}</b>\n<code>${chat.id}</code> is now a force-subscribe channel.`)
-    );
+    const built = new RH()
+      .heading(2, '✅ CHANNEL ADDED')
+      .paragraph(`<b>${htmlEsc(chat.title || String(chat.id))}</b> <code>(${chat.id})</code> is now a force-subscribe channel.`)
+      .paragraph(`Type: ${chat.type || 'group'}`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
+      `✅ <b>CHANNEL ADDED</b>\n\n` +
+      `${htmlEsc(chat.title || String(chat.id))} (${chat.id}) is now a force-subscribe channel.\n` +
+      `Type: ${chat.type || 'group'}\n\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     reactToOwn(ctx, msg, '👑');
   } catch (e) {
-    const msg = await ctx.replyWithHTML(fallbackError('FAILED', `Could not resolve that chat.\nMake sure the bot is a member/admin there.\n\n<code>${htmlEsc(e.message)}</code>`));
+    const built = new RH()
+      .heading(2, '🚫 FAILED')
+      .paragraph(`Could not resolve that chat.`)
+      .paragraph(`Make sure the bot is a member/admin there.`)
+      .paragraph(`<code>${htmlEsc(e.message)}</code>`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
+      `🚫 <b>FAILED</b>\n\n` +
+      `Could not resolve that chat.\nMake sure the bot is a member/admin there.\n\n<code>${htmlEsc(e.message)}</code>\n\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     reactToOwn(ctx, msg, '🚫');
   }
 });
@@ -584,12 +602,28 @@ bot.command('delchat', async (ctx) => {
   }
   const removed = DB.forceSub[arg];
   if (!removed) {
-    const msg = await ctx.replyWithHTML(fallbackWarn('NOT FOUND', 'That chat is not in the force-sub list.'));
+    const built = new RH()
+      .heading(2, '⚠️ NOT FOUND')
+      .paragraph('That chat is not in the force-sub list.');
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+      `⚠️ <b>NOT FOUND</b>\\n\\n` +
+      `That chat is not in the force-sub list.\\n\\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     return reactToOwn(ctx, msg, '⚠️');
   }
   delete DB.forceSub[arg];
   saveData();
-  const msg = await ctx.replyWithHTML(fallbackSuccess('REMOVED', `<b>${htmlEsc(removed.title)}</b> removed from force-subscribe.`));
+  const built = new RH()
+    .heading(2, '💥 REMOVED')
+    .paragraph(`<b>${htmlEsc(removed.title)}</b> removed from force-subscribe.`);
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+    `💥 <b>REMOVED</b>\\n\\n` +
+    `${htmlEsc(removed.title)} removed from force-subscribe.\\n\\n` +
+    `👤 Support: ${DEV_TAG}`;
+  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '💥');
 });
 
@@ -599,14 +633,31 @@ const listChatHandler = async (ctx) => {
   const entries = listChannels();
   const pendingTotal = Object.values(DB.pending).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
   if (entries.length === 0) {
-    const msg = await ctx.replyWithHTML(fallbackInfo('STATUS', `No force-sub channels configured yet.\n\n⏳ Pending users: <code>${pendingTotal}</code>`));
+    const built = new RH()
+      .heading(2, '📋 STATUS')
+      .paragraph('No force-sub channels configured yet.')
+      .paragraph(`⏳ Users pending verification: <code>${pendingTotal}</code>`);
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
+      `📋 <b>STATUS</b>\n\n` +
+      `No force-sub channels configured yet.\n\n` +
+      `⏳ Users pending verification: <code>${pendingTotal}</code>\n\n` +
+      `👤 Support: ${DEV_TAG}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     return reactToOwn(ctx, msg, '✨');
   }
   const lines = entries.map((c, i) => `◆ ${i + 1}. ${htmlEsc(c.title)} <code>(${c.id})</code>`).join('\n');
-  const msg = await ctx.replyWithHTML(
-    fallbackInfo(`FORCE-SUB LIST (${entries.length})`, lines) +
-    `\n\n⏳ Users pending verification: <code>${pendingTotal}</code>`
-  );
+  const built = new RH()
+    .heading(2, `📋 FORCE-SUB LIST (${entries.length})`)
+    .paragraph(lines)
+    .paragraph(`⏳ Users pending verification: <code>${pendingTotal}</code>`);
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
+    `📋 <b>FORCE-SUB LIST (${entries.length})</b>\n\n` +
+    lines + '\n\n' +
+    `⏳ Users pending verification: <code>${pendingTotal}</code>\n\n` +
+    `👤 Support: ${DEV_TAG}`;
+  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '📋');
 };
 bot.command(['listchat', 'fsubstatus', 'listfsub'], listChatHandler);
