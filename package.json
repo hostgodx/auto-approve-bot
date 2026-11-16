@@ -1,0 +1,13 @@
+{
+  "name": "auto-approve-bot",
+  "version": "2.0.0",
+  "description": "Telegram Auto-Approve bot (Telegraf + Telekaf Rich Messages) with keep-alive server",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@icanseeuanywhere/telekaf": "^4.17.1",
+    "express": "^4.19.2",
+    "telegraf": "^4.16.3"
+  }
+}

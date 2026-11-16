@@ -1,9 +1,15 @@
 # Auto-Approve Bot — Setup Guide (Premium HTML Edition)
 
 ## 1. Install
+**Node.js (primary — Telegraf + Telekaf Rich Messages):**
+```bash
+npm install
+cp .env.example .env   # then fill in your values
+npm start
+```
+**Python (legacy — Pyrogram):**
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # then fill in your values
 python auto_approve_bot.py
 ```
 

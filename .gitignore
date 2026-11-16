@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 *.session
 Void/
+node_modules/
+.cache/
+.npm/
