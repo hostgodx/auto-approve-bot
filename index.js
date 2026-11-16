@@ -300,7 +300,7 @@ const buildWelcome = (user) => {
     .heading(1, '👑 AUTO APPROVAL BOT')
     .paragraph(`Welcome, ${mention}${handle} 🎉`)
     .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
-  if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  AUTO APPROVAL BOT — Welcome Theme');
+  if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
     .divider()
     .heading(2, '◆ HOW IT WORKS')
