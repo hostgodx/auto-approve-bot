@@ -245,7 +245,7 @@ async function react(ctx, chatId, messageId, emoji) {
       reaction: [{ type: 'emoji', emoji: emoji || pickReaction() }],
     });
   } catch (e) {
-    log('debug', `reaction skipped (${emoji}):`, e.message);
+    log('warn', `reaction failed (${emoji}):`, e.message);
   }
 }
 
@@ -311,8 +311,9 @@ const buildWelcome = (user) => {
     .paragraph(`Welcome, ${mention}${handle} 🎉`)
     .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
   if (WELCOME_IMAGE) {
-    if (WELCOME_IMAGE2_URL) rich.photo(WELCOME_IMAGE2_URL, '🖼️');
-    if (WELCOME_IMAGE3_URL) rich.photo(WELCOME_IMAGE3_URL, '🖼️');
+    const imgs = [WELCOME_IMAGE2_URL, WELCOME_IMAGE3_URL].filter(Boolean);
+    if (imgs.length >= 2) rich.slideshow(...imgs);
+    else if (imgs.length === 1) rich.photo(imgs[0]);
   }
   if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
