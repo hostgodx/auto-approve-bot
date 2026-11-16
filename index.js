@@ -60,6 +60,10 @@ const WELCOME_AUDIO_FILE = path.join(__dirname, 'assets', 'welcome.mp3');
 const WELCOME_IMAGE = ['1', 'true', 'yes', 'on'].includes(String(process.env.WELCOME_IMAGE || 'on').toLowerCase());
 const WELCOME_IMAGE_URL = process.env.WELCOME_IMAGE_URL || `${PUBLIC_URL}/welcome.jpg`;
 const WELCOME_IMAGE_FILE = path.join(__dirname, 'assets', 'welcome.jpg');
+const WELCOME_IMAGE2_URL = process.env.WELCOME_IMAGE2_URL || `${PUBLIC_URL}/welcome2.jpg`;
+const WELCOME_IMAGE2_FILE = path.join(__dirname, 'assets', 'welcome2.jpg');
+const WELCOME_IMAGE3_URL = process.env.WELCOME_IMAGE3_URL || `${PUBLIC_URL}/welcome3.jpg`;
+const WELCOME_IMAGE3_FILE = path.join(__dirname, 'assets', 'welcome3.jpg');
 // Official listening link (we don't host copyrighted audio — we link the official source)
 const LISTEN_LINK = ['1', 'true', 'yes', 'on'].includes(String(process.env.LISTEN_LINK || 'on').toLowerCase());
 const OFFICIAL_LISTEN_URL = process.env.OFFICIAL_LISTEN_URL || 'https://www.youtube.com/watch?v=ZE0vLQ9nZH4';
@@ -306,7 +310,11 @@ const buildWelcome = (user) => {
     .heading(1, '👑 AUTO APPROVAL BOT')
     .paragraph(`Welcome, ${mention}${handle} 🎉`)
     .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
-  if (WELCOME_IMAGE && WELCOME_IMAGE_URL) rich.photo(WELCOME_IMAGE_URL, `👑  ${htmlEsc(BRAND_NAME)}`);
+  if (WELCOME_IMAGE) {
+    const imgs = [WELCOME_IMAGE_URL, WELCOME_IMAGE2_URL, WELCOME_IMAGE3_URL].filter(Boolean);
+    if (imgs.length === 1) rich.photo(imgs[0], `👑  ${htmlEsc(BRAND_NAME)}`);
+    else rich.collage(...imgs);
+  }
   if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
     .divider()
@@ -707,6 +715,24 @@ app.get('/welcome.jpg', (req, res) => {
   res.setHeader('Content-Length', fs.statSync(WELCOME_IMAGE_FILE).size);
   res.setHeader('Cache-Control', 'public, max-age=86400');
   fs.createReadStream(WELCOME_IMAGE_FILE).pipe(res);
+});
+
+// 👑 Welcome image #2 — catbox.moe upload
+app.get('/welcome2.jpg', (req, res) => {
+  if (!fs.existsSync(WELCOME_IMAGE2_FILE)) return res.status(404).json({ error: 'image not found' });
+  res.setHeader('Content-Type', 'image/jpeg');
+  res.setHeader('Content-Length', fs.statSync(WELCOME_IMAGE2_FILE).size);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  fs.createReadStream(WELCOME_IMAGE2_FILE).pipe(res);
+});
+
+// 👑 Welcome image #3 — catbox.moe upload
+app.get('/welcome3.jpg', (req, res) => {
+  if (!fs.existsSync(WELCOME_IMAGE3_FILE)) return res.status(404).json({ error: 'image not found' });
+  res.setHeader('Content-Type', 'image/jpeg');
+  res.setHeader('Content-Length', fs.statSync(WELCOME_IMAGE3_FILE).size);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  fs.createReadStream(WELCOME_IMAGE3_FILE).pipe(res);
 });
 
 // 🎵 Welcome Theme — served so Telegram can render it inside rich messages
