@@ -349,7 +349,7 @@ const buildWelcome = (user) => {
   rich.buttonRow(
     [
       { text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' },
-      { text: '➕ Add Me to Channel', callbackData: 'show_admin_perms', style: 'secondary' },
+      { text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
     ],
     'center'
   );
