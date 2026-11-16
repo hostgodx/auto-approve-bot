@@ -349,7 +349,7 @@ const buildWelcome = (user) => {
   rich.buttonRow(
     [
       { text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' },
-      { text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
+      { text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
     ],
     'center'
   );
@@ -609,6 +609,50 @@ const listChatHandler = async (ctx) => {
   reactToOwn(ctx, msg, '📋');
 };
 bot.command(['listchat', 'fsubstatus', 'listfsub'], listChatHandler);
+
+// /set — owner: list force-sub groups/channels + add-bot-as-admin option (telekaf rich card)
+bot.command('set', async (ctx) => {
+  if (ctx.from.id !== OWNER_ID) return;
+  const entries = listChannels();
+  const pendingTotal = Object.values(DB.pending).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
+
+  const built = new RH()
+    .heading(2, '⚙️ BOT SETUP')
+    .paragraph('Registered force-sub groups & channels:');
+
+  if (entries.length === 0) {
+    built.paragraph('⚠️ Abhi koi group ya channel force-sub mein add nahi hai.');
+  } else {
+    const lines = entries.map((c) =>
+      `• ${htmlEsc(c.title)} <code>(${c.id})</code>${c.username ? ` @${htmlEsc(c.username)}` : ''}`
+    ).join('\\n');
+    built.paragraph(lines);
+    built.divider();
+    built.paragraph(`⏳ Users pending verification: <code>${pendingTotal}</code>`);
+  }
+
+  built.divider()
+    .blockQuote('🤖 Naye group/channel mein add karne ke liye:')
+    .paragraph('Niche button se apna group ya channel select karein, phir bot ko <b>admin</b> banayein.')
+    .paragraph('Zaroori permissions: <b>Can restrict members</b>, <b>Can delete messages</b>, <b>Can pin messages</b>, <b>Can invite users via link</b>.')
+    .paragraph(`👤 Support: ${DEV_TAG}`);
+
+  built.buttonRow([{ text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
+
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\\n${DIVIDER}\\n\\n` +
+    `⚙️ <b>BOT SETUP</b>\\n\\n` +
+    (entries.length === 0
+      ? '⚠️ Abhi koi group ya channel force-sub mein add nahi hai.\\n\\n'
+      : entries.map((c, i) => `${i + 1}. ${htmlEsc(c.title)} (${c.id})${c.username ? ` @${htmlEsc(c.username)}` : ''}`).join('\\n') + '\\n\\n') +
+    `⏳ Users pending verification: <code>${pendingTotal}</code>\\n\\n` +
+    `🤖 Add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\\n` +
+    `Permissions: Can restrict members, Can delete messages, Can pin messages, Can invite users via link.\\n\\n` +
+    `👤 Support: ${DEV_TAG}`;
+
+  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+  reactToOwn(ctx, msg, '⚙️');
+});
 
 // noop callback
 bot.action('noop', (ctx) => ctx.answerCbQuery().catch(() => {}));
