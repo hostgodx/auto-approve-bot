@@ -361,10 +361,10 @@ const buildWelcome = (user) => {
 
   // Return RH instance (like /menu does) so sendRichMessage works correctly
   return {
-    built: rich,
+    built: rich.build(),
     fallback:
       `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
-      `👑 <b>Welcome, ${mention}${handle}!</b>\n\n` +
+      `👑 <b>Welcome, ${mention}!</b>\n\n` +
       `🤖 I'm the <b>Auto Approval Bot</b> — I verify and approve join requests for the private channel.\n\n` +
       cardShell('📌  <b>HOW IT WORKS</b>',
         '1️⃣ Send a join request to the private channel\n' +
