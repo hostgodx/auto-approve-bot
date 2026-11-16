@@ -346,7 +346,7 @@ const buildWelcome = (user) => {
       '<p>⚠️ Faking membership is impossible — the bot verifies it live.</p>')
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
     .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME))
-    .paragraph('⚠️ <b>IMPORTANT:</b> Button se Telegram dialog khulega — wahan apna <b>CHANNEL</b> select karein (group nahi), phir bot ko <b>admin</b> banayein. Auto-approval sirf channel par kaam karega.');
+    .paragraph('⚠️ <b>IMPORTANT:</b> Button se Telegram dialog khulega — wahan apna <b>CHANNEL ya GROUP</b> select karein, phir bot ko <b>admin</b> banayein.');
 
   // Three inline buttons: 2 on top row, 1 below
   const ownerId = process.env.OWNER_ID || '';
@@ -697,7 +697,7 @@ bot.command('set', async (ctx) => {
 
   built.divider()
     .blockQuote('🤖 Bot ko apne CHANNEL mein admin banane ke liye:')
-    .paragraph('Niche button se Telegram dialog khulega — wahan apna <b>CHANNEL</b> select karein (group nahi), phir bot ko <b>admin</b> banayein.')
+    .paragraph('Niche button se Telegram dialog khulega — wahan apna <b>CHANNEL ya GROUP</b> select karein, phir bot ko <b>admin</b> banayein.')
     .paragraph('Zaroori permissions: <b>Can restrict members</b>, <b>Can delete messages</b>, <b>Can pin messages</b>, <b>Can invite users via link</b>.')
     .paragraph(`👤 Support: ${DEV_TAG}`);
 
