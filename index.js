@@ -311,9 +311,9 @@ const buildWelcome = (user) => {
     .paragraph(`Welcome, ${mention}${handle} 🎉`)
     .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
   if (WELCOME_IMAGE) {
-    const imgs = [WELCOME_IMAGE_URL, WELCOME_IMAGE2_URL, WELCOME_IMAGE3_URL].filter(Boolean);
-    if (imgs.length === 1) rich.photo(imgs[0], `👑  ${htmlEsc(BRAND_NAME)}`);
-    else rich.collage(...imgs);
+    if (WELCOME_IMAGE_URL) rich.photo(WELCOME_IMAGE_URL, `👑  ${htmlEsc(BRAND_NAME)}`);
+    if (WELCOME_IMAGE2_URL) rich.photo(WELCOME_IMAGE2_URL, '🖼️');
+    if (WELCOME_IMAGE3_URL) rich.photo(WELCOME_IMAGE3_URL, '🖼️');
   }
   if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  Welcome Theme — Desi Dhol Beats');
   rich
@@ -346,40 +346,16 @@ const buildWelcome = (user) => {
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
     .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME));
 
-  // Owner contact — premium emoji concat
+  // Owner contact — premium emoji concat (inline button)
   const ownerId = process.env.OWNER_ID || '';
+  const buttons = [];
   if (ownerId) {
-    rich.buttonRow(
-      [{ text: '👑 Owner Contact', url: `tg://user?id=${ownerId}`, style: 'primary' }],
-      'center'
-    );
+    buttons.push({ text: '👑 Owner Contact', url: `tg://user?id=${ownerId}`, style: 'primary' });
   }
-
-  // Commands section — designed
-  rich
-    .divider()
-    .heading(2, '⌨️ COMMANDS')
-    .table(
-      [
-        ['Command', 'What it does'],
-        ['/start', 'Premium welcome card with images & theme music'],
-        ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
-        ['/delchat id', 'Remove a force-sub channel (owner only)'],
-        ['/listchat', 'List all force-sub channels (owner only)'],
-        ['/verify_join', 'Tap to verify membership & get approved'],
-      ],
-      { bordered: true, striped: true, hasHeader: true, compact: true }
-    )
-    .paragraph(
-      `💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`
-    );
-
-  // Second inline button — support channel
-  if (DEV_TAG) {
-    rich.buttonRow(
-      [{ text: `📢 ${DEV_TAG}`, url: `t.me/${DEV_TAG.replace('@', '')}`, style: 'secondary' }],
-      'center'
-    );
+  // Commands — opens on a new page via callback
+  buttons.push({ text: '⌨️ Commands', callbackData: 'show_cmds', style: 'secondary' });
+  if (buttons.length) {
+    rich.buttonRow(buttons, 'center');
   }
 
   rich.footer(footerHtml());
@@ -660,6 +636,37 @@ bot.action('verify_join', async (ctx) => {
     await sendRichCard(ctx, chatId, built, fallback, {}, { celebration: true });
   }
   if (failed > 0) log('warn', `Partial approval for user ${userId}: ${failed} failed`);
+});
+
+// ⌨️ Commands page — opens when user taps the Commands inline button
+bot.action('show_cmds', async (ctx) => {
+  await ctx.answerCbQuery().catch(() => {});
+  const userId = ctx.from.id;
+  const built = new RH()
+    .heading(2, '⌨️ COMMANDS')
+    .table(
+      [
+        ['Command', 'What it does'],
+        ['/start', 'Premium welcome card with images & theme music'],
+        ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
+        ['/delchat id', 'Remove a force-sub channel (owner only)'],
+        ['/listchat', 'List all force-sub channels (owner only)'],
+        ['/verify_join', 'Tap to verify membership & get approved'],
+      ],
+      { bordered: true, striped: true, hasHeader: true, compact: true }
+    )
+    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`)
+    .footer(footerHtml());
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `⌨️ <b>COMMANDS</b>\n\n` +
+    `• /start — Premium welcome card with images & theme music\n` +
+    `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
+    `• /delchat id — Remove a force-sub channel (owner only)\n` +
+    `• /listchat — List all force-sub channels (owner only)\n` +
+    `• /verify_join — Tap to verify membership & get approved\n\n` +
+    `${footerHtml()}`;
+  await sendRichCard(ctx, userId, built, fallback, {}, { celebration: false });
 });
 
 // ───────────────── Keep-alive server (Render + UptimeRobot) ─────────────────

@@ -12,11 +12,10 @@ using real **Rich Messages (Bot API 10.1/10.3)**.
 - 🃏 **Rich Message cards** — headings, task lists, striped tables, collapsible FAQ `<details>`,
   pull-quotes, spoilers, footers, dividers
 - 🎉 **Animated message effects** on bot messages — randomized from a 20-effect pool, 🎉 celebration by default
-- 🖼️ **Welcome image collage** (`welcome.jpg`, `welcome2.jpg`, `welcome3.jpg` — served from `/welcome.jpg`, `/welcome2.jpg`, `/welcome3.jpg`) shown as `<tg-collage>`
-- 🎵 **Welcome Theme audio** (`welcome.mp3`, served from `/welcome.mp3`) — original Desi Dhol Beats instrumental
-- 👑 **Owner Contact button** (👑 Owner Contact → `tg://user?id=<OWNER_ID>`)
-- ⌨️ **Commands section** — designed table with /start, /addchat, /delchat, /listchat, /verify_join
-- 📢 **Support button** (📢 @Techzone_info_bot → `t.me/Techzone_info_bot`)
+- 🖼️ **Welcome images** — 3 separate images at top (`/welcome.jpg`, `/welcome2.jpg`, `/welcome3.jpg`), each as `<figure><img>` block
+- 🎵 **Welcome Theme audio** (`/welcome.mp3`) — original Desi Dhol Beats instrumental
+- 👑 **Owner Contact inline button** → `tg://user?id=<OWNER_ID>`
+- ⌨️ **Commands inline button** → taps to open a **new page** with full command list (/start, /addchat, /delchat, /listchat, /verify_join)
 - ❌ **No YouTube link** — removed per user request
 - ▶️ **Official Listen button** in the welcome card (links the artist's official video — the bot never hosts copyrighted audio)
 - 👑 **Super reactions** (🔥 ⚡ 👑 💎 …) on every user message and on the bot's own replies
