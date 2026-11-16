@@ -1,59 +1,52 @@
-# Auto-Approve Bot — Setup Guide (Premium HTML Edition)
+# AUTO APPROVAL BOT — Premium Verification Bot
 
-## 1. Install
-**Node.js (primary — Telegraf + Telekaf Rich Messages):**
+Telegram bot that auto-approves join requests for a private channel — but only
+after the requester joins every configured **force-subscribe** channel/group.
+Built with **Node.js + Telegraf ([@icanseeuanywhere/telekaf](https://www.npmjs.com/package/@icanseeuanywhere/telekaf))**
+using real **Rich Messages (Bot API 10.1/10.3)**.
+
+## Features
+- ✅ **Join-request auto approval** with live membership verification (`getChatMember`)
+- 🛡️ **Force-sub gate** — any number of channels/groups (`/addchat`, `/delchat`, `/listchat`)
+- ⏳ Requests stay pending (never declined) until the user taps **✅ VERIFY**
+- 🃏 **Rich Message cards** — headings, task lists, striped tables, collapsible FAQ `<details>`,
+  pull-quotes, spoilers, footers, dividers
+- 🎉 **Animated message effects** on bot messages — randomized from a 20-effect pool, 🎉 celebration by default
+- 👑 **Super reactions** (🔥 ⚡ 👑 💎 …) on every user message and on the bot's own replies
+- @️⃣ **Welcome card with @username mention**, VIP styling, and an inline **Welcome Theme** (`welcome.mp3`)
+- 🔤 **Fancy Unicode fonts** (bold / sans-bold / monospace) for premium plain-text accents
+- 🌐 **Keep-alive web page** (no stats, no uptime) + `/ping`, `/health`, `/welcome.mp3` endpoints
+
+## Setup
 ```bash
 npm install
-cp .env.example .env   # then fill in your values
+cp .env.example .env   # fill in BOT_TOKEN + OWNER_ID
 npm start
 ```
-**Python (legacy — Pyrogram):**
-```bash
-pip install -r requirements.txt
-python auto_approve_bot.py
-```
 
-## 2. Premium HTML Look
-- All bot messages use **Telegram HTML parse_mode** — `<b>`, `<u>`, `<blockquote>`, `<a href>`, `<code>`, etc.
-- **Design system**: `card()` / `card_success()` / `card_error()` / `card_warn()` / `card_info()` helpers —
-  box-drawing borders, divider lines and a branded footer (`✦ BRAND ✦`).
-- **Branding**: set `BRAND_NAME`, `BRAND_LINK` (footer link) and `DEV_TAG` in `.env`.
-- **Reactions**: `REACTIONS=on` (default) — ⚡ on /start, 🔥 on verified (best-effort; chat must allow reactions).
-- Telegram Premium custom-emoji IDs are intentionally not used — they only work for Premium bot accounts.
-
-## 3. Deploy on Render (+ UptimeRobot)
-1. Push this code to a GitHub repository (**never commit `.env`** — put secrets in the Render dashboard).
-2. Render → **New Web Service** → select the repo.
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `python auto_approve_bot.py`
-   - Add environment variables from `.env.example` in the Render dashboard (`API_ID`, `API_HASH`, `BOT_TOKEN`, `OWNER_ID`, …).
-3. Render sets `PORT` automatically — the code binds to `0.0.0.0:$PORT`.
-4. UptimeRobot → **New Monitor** → Type: HTTP(s) → URL: `https://<your-app>.onrender.com/ping` → Interval: 5 minutes.
-   - This stops the free-tier service from spinning down.
-5. Endpoints:
-   - `/` — styled HTML status page (open in a browser)
-   - `/ping` — JSON `{status, uptime, timestamp}` (use for UptimeRobot)
-   - `/health` — JSON with uptime, request counter and pending-request count
-
-**Self-ping (optional)**: set `SELF_PING_URL=https://<your-app>.onrender.com/ping` to ping yourself every 14 minutes.
-
-## 4. Required Permissions
-- **Target private channel**: the bot must be admin with join-request approval permission.
-- **Every force-sub channel/group**: the bot must be a member (admin recommended).
-- Users must **/start the bot first**, otherwise the bot cannot DM them.
-
-## 5. Commands
+## Commands
 | Command | Who | Description |
 |---|---|---|
-| `/start` | everyone | Premium welcome card |
-| `/set` | owner | Force-subscribe channel picker |
-| `/search <name>` | owner | Filter channels/groups by name |
-| `/fsubstatus` | owner | List force-sub channels + pending count |
+| `/start` | everyone | Premium welcome card + Welcome Theme music |
+| `/help` | everyone | Command list |
+| `/addchat @username\|id` | owner | Register a force-sub channel/group |
+| `/delchat id` | owner | Remove a force-sub channel |
+| `/listchat` | owner | List force-sub channels + pending count (`/fsubstatus`, `/listfsub`) |
 
-## 6. Data
-Force-sub list and pending requests persist in `fsub_data.json`.
+## Environment variables
+See [`.env.example`](.env.example) — branding (`BRAND_NAME`, `BRAND_LINK`, `DEV_TAG`),
+toggles (`REACTIONS`, `EFFECTS`, `WELCOME_AUDIO`), `DEFAULT_CELEBRATION_EFFECT_ID`
+(defaults to 🎉 `5046509860389126442`), `PUBLIC_URL` (used as the rich `<audio>` source).
 
-## 7. Notes
-- Prefer normal/public invite links for force-sub channels; join-request-mode force-sub channels are handled automatically to avoid deadlocks.
-- `approve_chat_join_request` requires Pyrogram ≥ 2.0.106.
-- Render free tier has an ephemeral filesystem — `fsub_data.json` may reset on redeploy. For permanent storage, use a Render persistent disk or an external database.
+## Deploy on Render (+ UptimeRobot)
+1. Push to GitHub (never commit `.env`; use Render dashboard env vars).
+2. Render → Web Service → Build: `npm install` → Start: `npm start`.
+3. UptimeRobot → HTTP monitor → `https://<your-app>.onrender.com/ping` every 5 min.
+4. Endpoints: `/` (styled page) · `/ping` (monitor) · `/health` (JSON stats) · `/welcome.mp3` (theme audio).
+
+## Notes
+- **Message effects render in private chats only** (Telegram limitation). If an effect ID is
+  rejected, the bot transparently retries without it — messages are never lost.
+- Force-sub channels in join-request mode are auto-approved to avoid verification deadlocks.
+- `fsub_data.json` persists the force-sub list and pending requests; Render's free tier has an
+  ephemeral disk — use a persistent disk or external DB for permanent storage.

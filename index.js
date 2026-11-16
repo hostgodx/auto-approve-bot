@@ -7,9 +7,11 @@
  *  • Approves join requests for the private channel only after the
  *    user joins all configured force-subscribe channels/groups
  *  • Real RichMessage cards (headings, tables, task lists, footer)
+ *  • Animated message effects (multiple emoji effects, celebration default)
  *  • Super reactions on user messages and on the bot's own replies
+ *  • Premium welcome card: @username mention, music theme, rich features
  *  • Built-in keep-alive HTTP server for Render + UptimeRobot
- *    (/ , /ping , /health)
+ *    (/ , /ping , /health , /welcome.mp3)
  *
  *  Setup:
  *    1. npm install
@@ -47,9 +49,14 @@ const BRAND_NAME = process.env.BRAND_NAME || 'AUTO APPROVAL BOT';
 const BRAND_LINK = process.env.BRAND_LINK || '';
 const DEV_TAG = process.env.DEV_TAG || '';
 const REACTIONS = ['1', 'true', 'yes', 'on'].includes(String(process.env.REACTIONS || 'on').toLowerCase());
+const EFFECTS = ['1', 'true', 'yes', 'on'].includes(String(process.env.EFFECTS || 'on').toLowerCase());
+const WELCOME_AUDIO = ['1', 'true', 'yes', 'on'].includes(String(process.env.WELCOME_AUDIO || 'on').toLowerCase());
 const PORT = Number(process.env.PORT || 3000);
 const SELF_PING_URL = process.env.SELF_PING_URL || '';
 const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'fsub_data.json');
+const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://auto-approve-bot-m60r.onrender.com').replace(/\/+$/, '');
+const WELCOME_AUDIO_URL = process.env.WELCOME_AUDIO_URL || `${PUBLIC_URL}/welcome.mp3`;
+const WELCOME_AUDIO_FILE = path.join(__dirname, 'assets', 'welcome.mp3');
 
 if (!BOT_TOKEN) { console.error('❌ Missing BOT_TOKEN'); process.exit(1); }
 if (!OWNER_ID) { console.error('❌ Missing OWNER_ID'); process.exit(1); }
@@ -60,6 +67,60 @@ const DIVIDER = '⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯';
 // ✦ Super reaction pool — fired on user messages and the bot's own replies
 const REACTION_POOL = ['🔥', '⚡', '👑', '💎', '✨', '🚀', '💥', '⭐', '❤️‍🔥', '🫡'];
 const pickReaction = () => REACTION_POOL[Math.floor(Math.random() * REACTION_POOL.length)];
+
+// ✦ Animated message effects (decorate bot messages — NOT reaction counts).
+//    IDs are community-documented Telegram effect IDs; effects only render
+//    in private chats. If Telegram rejects one, we transparently retry without.
+const DEFAULT_CELEBRATION_EFFECT_ID = process.env.DEFAULT_CELEBRATION_EFFECT_ID || '5046509860389126442';
+const EFFECT_POOL = [
+  { id: DEFAULT_CELEBRATION_EFFECT_ID, emoji: '🎉', name: 'celebration' },
+  { id: '5104841245755180586', emoji: '🔥', name: 'fire' },
+  { id: '5159385139981059251', emoji: '❤️', name: 'heart' },
+  { id: '5170166362592510656', emoji: '👏', name: 'clap' },
+  { id: '5089343350188802996', emoji: '🥳', name: 'party' },
+  { id: '5161554034041029689', emoji: '🤩', name: 'starstruck' },
+  { id: '4962976753686414048', emoji: '💯', name: 'hundred' },
+  { id: '5123236135417415011', emoji: '⚡', name: 'zap' },
+  { id: '5123046001510188023', emoji: '🏆', name: 'trophy' },
+  { id: '4961122255527478034', emoji: '🍾', name: 'champagne' },
+  { id: '5089422278802801345', emoji: '👑', name: 'crown' },
+  { id: '4965608262968804599', emoji: '💎', name: 'gem' },
+  { id: '5121096477199827757', emoji: '💥', name: 'boom' },
+  { id: '5089460564141278042', emoji: '✨', name: 'sparkles' },
+  { id: '5041819580008236993', emoji: '🎊', name: 'tada' },
+  { id: '5044101728060834560', emoji: '🎆', name: 'fireworks' },
+  { id: '4913930782671635058', emoji: '🫡', name: 'salute' },
+  { id: '5048771083361059460', emoji: '😁', name: 'grin' },
+  { id: '5066779159678682060', emoji: '😍', name: 'love' },
+  { id: '5170169077011841524', emoji: '🥰', name: 'inlove' },
+];
+const pickEffect = (preferCelebration = false) => {
+  if (!EFFECTS) return null;
+  if (preferCelebration) return DEFAULT_CELEBRATION_EFFECT_ID;
+  return EFFECT_POOL[Math.floor(Math.random() * EFFECT_POOL.length)].id;
+};
+
+// ✦ Fancy Unicode fonts for premium-looking plain-text accents
+const FANCY = (() => {
+  const build = (up, low, dig) => {
+    const map = {};
+    for (let i = 0; i < 26; i++) {
+      map[String.fromCharCode(65 + i)] = String.fromCodePoint(up + i);
+      map[String.fromCharCode(97 + i)] = String.fromCodePoint(low + i);
+    }
+    for (let i = 0; i < 10; i++) map[String.fromCharCode(48 + i)] = String.fromCodePoint(dig + i);
+    return map;
+  };
+  const fonts = {
+    bold: build(0x1D400, 0x1D41A, 0x1D7CE),   // 𝗦𝗘𝗥𝗜𝗙 𝗕𝗢𝗟𝗗
+    sans: build(0x1D5D4, 0x1D5EE, 0x1D7EC),   // 𝗦𝗔𝗡𝗦 𝗕𝗢𝗟𝗗
+    mono: build(0x1D670, 0x1D68A, 0x1D7F6),   // 𝚖𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎
+  };
+  return (text, font = 'sans') => {
+    const m = fonts[font] || fonts.sans;
+    return String(text).split('').map((c) => m[c] || c).join('');
+  };
+})();
 
 const htmlEsc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -104,9 +165,10 @@ function saveData() {
 
 // ───────────────── Rich card helpers ─────────────────
 function footerHtml() {
+  const brandText = FANCY(htmlEsc(BRAND_NAME).toUpperCase(), 'sans');
   const brand = BRAND_LINK
-    ? `<a href="${BRAND_LINK}">${htmlEsc(BRAND_NAME)}</a>`
-    : `<b>${htmlEsc(BRAND_NAME)}</b>`;
+    ? `<a href="${BRAND_LINK}">${brandText}</a>`
+    : `<b>${brandText}</b>`;
   return `✦ ${brand}${DEV_TAG ? '  •  ⚡ ' + htmlEsc(DEV_TAG) : ''} ✦`;
 }
 
@@ -126,22 +188,42 @@ const fallbackWarn = (title, body) =>
 const fallbackInfo = (title, body) =>
   cardShell(`◆  <b>${htmlEsc(title)}</b>`, body) + `\n\n${footerHtml()}`;
 
-async function sendRichCard(ctx, chatId, built, fallbackHtml, extra = {}) {
-  try {
-    if (ctx.telegram.sendRichMessage) return await ctx.telegram.sendRichMessage(chatId, built, extra);
-    throw new Error('sendRichMessage unavailable');
-  } catch (e) {
+async function sendRichCard(ctx, chatId, built, fallbackHtml, extra = {}, opts = {}) {
+  const tg = ctx.telegram;
+  const preferCelebration = !!opts.celebration;
+  const effectId = pickEffect(preferCelebration);
+  const attempt = async (label, fn) => {
     try {
-      return await ctx.telegram.sendMessage(chatId, fallbackHtml, { parse_mode: 'HTML', ...extra });
-    } catch (e2) {
-      try {
-        return await ctx.telegram.sendMessage(chatId, fallbackHtml.replace(/<[^>]+>/g, ''), extra);
-      } catch (e3) {
-        log('error', 'Could not send message:', e3.message);
-        return null;
-      }
+      return await fn();
+    } catch (e) {
+      log('warn', `${label} failed for chat ${chatId}:`, e && e.message ? e.message : e);
+      return null;
     }
+  };
+
+  if (tg.sendRichMessage) {
+    // 1) rich card with animated effect (private chats)
+    if (effectId) {
+      const withEffect = await attempt('rich+effect', () =>
+        tg.sendRichMessage(chatId, built, { ...extra, message_effect_id: effectId })
+      );
+      if (withEffect) return withEffect;
+    }
+    // 2) rich card without effect (effect rejected / unsupported)
+    const plainRich = await attempt('rich', () => tg.sendRichMessage(chatId, built, extra));
+    if (plainRich) return plainRich;
   }
+  // 3) styled HTML fallback
+  const htmlMsg = await attempt('html', () =>
+    tg.sendMessage(chatId, fallbackHtml, { parse_mode: 'HTML', ...extra })
+  );
+  if (htmlMsg) return htmlMsg;
+  // 4) plain text last resort
+  const plainMsg = await attempt('plain', () =>
+    tg.sendMessage(chatId, fallbackHtml.replace(/<[^>]+>/g, ''), extra)
+  );
+  if (!plainMsg) log('error', 'Could not deliver message to chat', chatId);
+  return plainMsg;
 }
 
 async function react(ctx, chatId, messageId, emoji) {
@@ -154,6 +236,23 @@ async function react(ctx, chatId, messageId, emoji) {
     });
   } catch (e) {
     log('debug', `reaction skipped (${emoji}):`, e.message);
+  }
+}
+
+// sendAudio with effect → transparent retry without effect (private chats only)
+async function sendAudioSafe(telegram, chatId, baseOpts, effectId) {
+  const file = { source: WELCOME_AUDIO_FILE, filename: 'auto-approval-bot-welcome-theme.mp3' };
+  try {
+    const opts = effectId ? { ...baseOpts, message_effect_id: effectId } : baseOpts;
+    return await telegram.sendAudio(chatId, file, opts);
+  } catch (e) {
+    log('warn', 'sendAudio (with effect) failed, retrying plain:', e.message);
+    try {
+      return await telegram.sendAudio(chatId, file, baseOpts);
+    } catch (e2) {
+      log('warn', 'sendAudio failed:', e2.message);
+      return null;
+    }
   }
 }
 
@@ -190,35 +289,68 @@ async function membershipOk(telegram, userId) {
 
 const listChannels = () => Object.entries(DB.forceSub).map(([id, ch]) => ({ id, ...ch }));
 
-const buildWelcome = (name) => ({
-  built: new RH()
-    .heading(1, '⏤ AUTO APPROVAL BOT')
-    .paragraph(
-      `Welcome <b>${name}</b>, to <b>${htmlEsc(BRAND_NAME)}</b> — the Premium Auto Approval Engine. ` +
-      `Send a join request to the private channel, complete verification and get approved.`
-    )
+const buildWelcome = (user) => {
+  const userId = user && user.id;
+  const name = htmlEsc((user && user.first_name) || 'User');
+  const uname = user && user.username ? `@${user.username}` : null;
+  const mention = userId ? `<a href="tg://user?id=${userId}">${name}</a>` : name;
+  const handle = uname ? ` · ${htmlEsc(uname)}` : '';
+
+  const rich = new RH()
+    .heading(1, '👑 AUTO APPROVAL BOT')
+    .paragraph(`Welcome, ${mention}${handle} 🎉`)
+    .paragraph(RH.italic('Premium auto-approval engine for exclusive channels — built for VIPs.'));
+  if (WELCOME_AUDIO && WELCOME_AUDIO_URL) rich.audio(WELCOME_AUDIO_URL, '🎵  AUTO APPROVAL BOT — Welcome Theme');
+  rich
     .divider()
-    .heading(2, '📌 HOW IT WORKS')
+    .heading(2, '◆ HOW IT WORKS')
     .taskList(
       { text: 'Send a join request to the private channel', checked: true },
       { text: 'Join all the required channels below', checked: true },
       { text: 'Tap ✅ VERIFY', checked: true },
       { text: 'Your request gets approved 🎉', checked: true }
     )
-    .paragraph('<i>Verification takes less than a minute.</i>')
-    .footer(footerHtml())
-    .build(),
-  fallback:
-    `<b>『 AUTO APPROVAL BOT 』</b>\n${DIVIDER}\n\n` +
-    `👑 <b>Hello ${name}!</b>\n\n` +
-    `🤖 I'm the <b>Auto Approval Bot</b> — I verify and approve join requests for the private channel.\n\n` +
-    cardShell('📌  <b>HOW IT WORKS</b>',
-      '1️⃣ Send a join request to the private channel\n' +
-      '2️⃣ Join the channels/groups below\n' +
-      '3️⃣ Tap the <b>✅ VERIFY</b> button\n' +
-      '4️⃣ Your request gets approved 🎉') +
-    `\n\n<blockquote>⚡ Fast  •  🔒 Secure  •  🟢 24/7 Online</blockquote>\n\n${footerHtml()}`,
-});
+    .divider()
+    .heading(2, '◆ WHY YOU’LL LOVE IT')
+    .table(
+      [
+        ['Feature', 'Status'],
+        ['Auto Approval', '⚡ Instant'],
+        ['Force-Sub Gate', '🛡️ Multi-channel'],
+        ['Uptime', '🟢 24/7'],
+        ['Support', DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'],
+      ],
+      { bordered: true, striped: true, hasHeader: true, compact: true }
+    )
+    .details('❓ FAQ & RULES',
+      '<p><b>1.</b> Send a join request to the private channel.</p>' +
+      '<p><b>2.</b> Join EVERY force-subscribe channel/group listed by the bot.</p>' +
+      '<p><b>3.</b> Tap <b>✅ VERIFY</b> — you are approved the moment membership is detected.</p>' +
+      '<p>⚠️ Requests from users who never tap VERIFY stay pending forever.</p>' +
+      '<p>⚠️ Faking membership is impossible — the bot verifies it live.</p>')
+    .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
+    .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME))
+    .footer(footerHtml());
+
+  return {
+    built: rich.build(),
+    fallback:
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+      `👑 <b>Welcome, ${mention}${handle}!</b>\n\n` +
+      `🤖 I'm the <b>Auto Approval Bot</b> — I verify and approve join requests for the private channel.\n\n` +
+      cardShell('📌  <b>HOW IT WORKS</b>',
+        '1️⃣ Send a join request to the private channel\n' +
+        '2️⃣ Join the channels/groups below\n' +
+        '3️⃣ Tap the <b>✅ VERIFY</b> button\n' +
+        '4️⃣ Your request gets approved 🎉') +
+      `\n\n` +
+      cardShell('✨  <b>WHY YOU’LL LOVE IT</b>',
+        '⚡ Instant approval  •  🛡️ Force-sub gate\n' +
+        '🟢 24/7 online  •  🎵 Welcome theme song\n' +
+        (DEV_TAG ? `💬 Support: ${htmlEsc(DEV_TAG)}` : '')) +
+      `\n\n<blockquote>${FANCY('F A S T   •   S E C U R E   •   P R E M I U M', 'mono')}</blockquote>\n\n${footerHtml()}`,
+  };
+};
 
 const buildVerify = (name) => ({
   built: new RH()
@@ -226,7 +358,9 @@ const buildVerify = (name) => ({
     .blockQuote('◆ Join all the channels below\n◆ Then tap the ✅ VERIFY button')
     .divider()
     .heading(3, '📢 CHANNELS')
-    .ul(...listChannels().map((c, i) => `${i + 1}. ${htmlEsc(c.title)}`))
+    .raw(listChannels().length
+      ? `<ul>${listChannels().map((c, i) => `<li>${i + 1}. ${htmlEsc(c.title)}</li>`).join('')}</ul>`
+      : '<p>✅ No channels configured — you will be approved automatically.</p>')
     .details('Important', 'If verification fails, make sure you joined EVERY channel/group listed and the bot has permission to check your membership.')
     .footer(footerHtml())
     .build(),
@@ -240,14 +374,15 @@ const buildVerify = (name) => ({
 
 const buildApproved = () => ({
   built: new RH()
-    .heading(2, '✅ CONGRATULATIONS')
+    .heading(2, '🎉 CONGRATULATIONS')
     .blockQuote('All requirements are complete — your join request has been <b>approved</b>.')
     .taskList(
       { text: 'Required channels joined', checked: true },
       { text: 'Verification passed', checked: true },
       { text: 'Join request approved', checked: true }
     )
-    .paragraph('You can now enter the private channel and enjoy the content.')
+    .pullQuote('Welcome to the inner circle.', htmlEsc(BRAND_NAME))
+    .paragraph('You can now enter the private channel and enjoy the content. 🥂')
     .footer(footerHtml())
     .build(),
   fallback: fallbackSuccess(
@@ -287,12 +422,25 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-// /start — premium welcome card
+// /start — premium welcome card (+ Welcome Theme music)
 bot.start(async (ctx) => {
-  const name = htmlEsc((ctx.from && ctx.from.first_name) || 'User');
-  const { built, fallback } = buildWelcome(name);
-  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback);
-  if (msg && msg.message_id) react(ctx, ctx.chat.id, msg.message_id, pickReaction());
+  const { built, fallback } = buildWelcome(ctx.from);
+  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: true });
+  if (msg && msg.message_id) react(ctx, ctx.chat.id, msg.message_id, '🎉');
+
+  // ✦ Welcome Theme music — plays inline in the chat
+  if (WELCOME_AUDIO && fs.existsSync(WELCOME_AUDIO_FILE)) {
+    const caption = `🎵  Welcome, ${htmlEsc((ctx.from && ctx.from.first_name) || 'User')}!  ${FANCY('AUTO APPROVAL BOT', 'sans')}`;
+    const audioOpts = {
+      caption,
+      parse_mode: 'HTML',
+      title: 'AUTO APPROVAL BOT — Welcome Theme',
+      performer: BRAND_NAME,
+    };
+    const eff = pickEffect(true);
+    const audio = await sendAudioSafe(ctx.telegram, ctx.chat.id, audioOpts, eff);
+    if (audio && audio.message_id) react(ctx, ctx.chat.id, audio.message_id, '⚡');
+  }
 });
 
 // /help — command list
@@ -399,7 +547,7 @@ bot.on('chat_join_request', async (ctx) => {
       await ctx.telegram.callApi('approveChatJoinRequest', { chat_id: chatId, user_id: userId });
       log('info', `Approved: chat=${chatId} user=${userId}`);
       const { built, fallback } = buildApproved();
-      const msg = await sendRichCard(ctx, userId, built, fallback);
+      const msg = await sendRichCard(ctx, userId, built, fallback, {}, { celebration: true });
       if (msg && msg.message_id) react(ctx, userId, msg.message_id, '🔥');
     } catch (e) {
       log('error', `Approve failed chat=${chatId} user=${userId}:`, e.message);
@@ -455,10 +603,10 @@ bot.action('verify_join', async (ctx) => {
     }
     // Upgrade to a real rich card silently
     try { await ctx.telegram.deleteMessage(chatId, messageId); } catch (e2) {}
-    await sendRichCard(ctx, chatId, built, fallback);
-    react(ctx, chatId, messageId, '🔥');
+    const newMsg = await sendRichCard(ctx, chatId, built, fallback, {}, { celebration: true });
+    react(ctx, chatId, newMsg && newMsg.message_id ? newMsg.message_id : messageId, '🔥');
   } else if (chatId) {
-    await sendRichCard(ctx, chatId, built, fallback);
+    await sendRichCard(ctx, chatId, built, fallback, {}, { celebration: true });
   }
   if (failed > 0) log('warn', `Partial approval for user ${userId}: ${failed} failed`);
 });
@@ -472,10 +620,13 @@ const KEEPALIVE_HTML = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${htmlEsc(BRAND_NAME)} — ONLINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root { --glow:#7c5cff; --bg:#0b0b14; --txt:#f2f0ff; --dim:#8a87a8; --ok:#35e0a1; }
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; }
-  body { min-height:100vh; background:radial-gradient(1200px 600px at 50% -10%, #241a4d 0%, var(--bg) 60%); color:var(--txt);
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',system-ui,-apple-system,sans-serif; min-height:100vh; background:radial-gradient(1200px 600px at 50% -10%, #241a4d 0%, var(--bg) 60%); color:var(--txt);
          display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .orb { position:fixed; border-radius:50%; filter:blur(90px); opacity:.45; z-index:0; animation:drift 12s ease-in-out infinite alternate; }
   .orb.a { width:340px; height:340px; background:#5a2bff; top:-80px; left:-80px; }
@@ -488,7 +639,7 @@ const KEEPALIVE_HTML = `<!doctype html>
            border:1px solid rgba(53,224,161,.4); background:rgba(53,224,161,.08); padding:6px 16px; border-radius:999px; margin-bottom:26px; }
   .dot { width:9px; height:9px; border-radius:50%; background:var(--ok); box-shadow:0 0 12px var(--ok); animation:pulse 1.4s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-  h1 { font-size:29px; font-weight:800; letter-spacing:1px; line-height:1.25;
+  h1 { font-family:'Cinzel',Georgia,serif; font-size:30px; font-weight:800; letter-spacing:1.5px; line-height:1.3;
        background:linear-gradient(135deg,#c9b8ff 0%,#7c5cff 45%,#b03bff 100%);
        -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; }
   .sub { color:var(--dim); font-size:12px; letter-spacing:3px; text-transform:uppercase; margin-bottom:26px; }
@@ -532,8 +683,17 @@ app.get('/health', (req, res) =>
   })
 );
 
+// 🎵 Welcome Theme — served so Telegram can render it inside rich messages
+app.get('/welcome.mp3', (req, res) => {
+  if (!fs.existsSync(WELCOME_AUDIO_FILE)) return res.status(404).json({ error: 'audio not found' });
+  res.setHeader('Content-Type', 'audio/mpeg');
+  res.setHeader('Content-Length', fs.statSync(WELCOME_AUDIO_FILE).size);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  fs.createReadStream(WELCOME_AUDIO_FILE).pipe(res);
+});
+
 const server = app.listen(PORT, '0.0.0.0', () =>
-  log('success', `Keep-alive server listening on 0.0.0.0:${PORT}  (/ping, /health)`)
+  log('success', `Keep-alive server listening on 0.0.0.0:${PORT}  (/ping, /health, /welcome.mp3)`)
 );
 
 // Optional self-ping (UptimeRobot is recommended instead)
@@ -564,10 +724,16 @@ async function launchWithRetry(attempt = 1) {
     log('error', 'Polling disabled — keep-alive server stays up (check bot token / duplicates).');
   }
 }
-launchWithRetry();
 
-process.once('SIGINT', () => { log('warn', 'SIGINT — shutting down'); bot.stop('SIGINT'); server.close(() => process.exit(0)); });
-process.once('SIGTERM', () => { log('warn', 'SIGTERM — shutting down'); bot.stop('SIGTERM'); server.close(() => process.exit(0)); });
+// Exported for tests — requiring this file does not start polling.
+module.exports = { buildWelcome, buildVerify, buildApproved, sendRichCard, FANCY, EFFECT_POOL, pickEffect };
+
+if (require.main === module) {
+  launchWithRetry();
+
+  process.once('SIGINT', () => { log('warn', 'SIGINT — shutting down'); bot.stop('SIGINT'); server.close(() => process.exit(0)); });
+  process.once('SIGTERM', () => { log('warn', 'SIGTERM — shutting down'); bot.stop('SIGTERM'); server.close(() => process.exit(0)); });
+}
 
 process.on('unhandledRejection', (reason) => {
   const msg = (reason && reason.message) || String(reason);
