@@ -359,8 +359,9 @@ const buildWelcome = (user) => {
 
   // NO footer — removed per user request
 
+  // Return RH instance (like /menu does) so sendRichMessage works correctly
   return {
-    built: rich.build(),
+    built: rich,
     fallback:
       `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `👑 <b>Welcome, ${mention}${handle}!</b>\n\n` +
