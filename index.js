@@ -350,7 +350,7 @@ const buildWelcome = (user) => {
   rich.buttonRow(
     [
       { text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' },
-      { text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
+      { text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'secondary' },
     ],
     'center'
   );
@@ -692,7 +692,7 @@ bot.command('set', async (ctx) => {
     .paragraph('Zaroori permissions: <b>Can restrict members</b>, <b>Can delete messages</b>, <b>Can pin messages</b>, <b>Can invite users via link</b>.')
     .paragraph(`👤 Support: ${DEV_TAG}`);
 
-  built.buttonRow([{ text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
+  built.buttonRow([{ text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
 
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
@@ -701,7 +701,7 @@ bot.command('set', async (ctx) => {
       ? '⚠️ Abhi koi group ya channel force-sub mein add nahi hai.\n\n'
       : entries.map((c, i) => `${i + 1}. ${typeIcon(c.type)} ${htmlEsc(c.title)} (${c.id})${c.username ? ` @${htmlEsc(c.username)}` : ''}`).join('\n') + '\n\n') +
     `⏳ Users pending verification: <code>${pendingTotal}</code>\n\n` +
-    `🤖 Apne CHANNEL mein add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
+    `🤖 Apne CHANNEL mein add karne ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
     `Dialog mein CHANNEL select karein (group nahi), phir bot ko admin banayein.\n` +
     `Permissions: Can restrict members, Can delete messages, Can pin messages, Can invite users via link.\n\n` +
     `👤 Support: ${DEV_TAG}`;
