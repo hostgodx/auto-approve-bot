@@ -342,7 +342,8 @@ const buildWelcome = (user) => {
       '<p>⚠️ Requests from users who never tap VERIFY stay pending forever.</p>' +
       '<p>⚠️ Faking membership is impossible — the bot verifies it live.</p>')
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
-    .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME));
+    .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME))
+    .paragraph('⚠️ <b>IMPORTANT:</b> Button se Telegram dialog khulega — wahan apna <b>CHANNEL</b> select karein (group nahi), phir bot ko <b>admin</b> banayein. Auto-approval sirf channel par kaam karega.');
 
   // Three inline buttons: 2 on top row, 1 below
   const ownerId = process.env.OWNER_ID || '';
@@ -686,8 +687,8 @@ bot.command('set', async (ctx) => {
   }
 
   built.divider()
-    .blockQuote('🤖 Naye group/channel mein add karne ke liye:')
-    .paragraph('Niche button se apna group ya channel select karein, phir bot ko <b>admin</b> banayein.')
+    .blockQuote('🤖 Bot ko apne CHANNEL mein admin banane ke liye:')
+    .paragraph('Niche button se Telegram dialog khulega — wahan apna <b>CHANNEL</b> select karein (group nahi), phir bot ko <b>admin</b> banayein.')
     .paragraph('Zaroori permissions: <b>Can restrict members</b>, <b>Can delete messages</b>, <b>Can pin messages</b>, <b>Can invite users via link</b>.')
     .paragraph(`👤 Support: ${DEV_TAG}`);
 
@@ -700,7 +701,8 @@ bot.command('set', async (ctx) => {
       ? '⚠️ Abhi koi group ya channel force-sub mein add nahi hai.\n\n'
       : entries.map((c, i) => `${i + 1}. ${typeIcon(c.type)} ${htmlEsc(c.title)} (${c.id})${c.username ? ` @${htmlEsc(c.username)}` : ''}`).join('\n') + '\n\n') +
     `⏳ Users pending verification: <code>${pendingTotal}</code>\n\n` +
-    `🤖 Add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
+    `🤖 Apne CHANNEL mein add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
+    `Dialog mein CHANNEL select karein (group nahi), phir bot ko admin banayein.\n` +
     `Permissions: Can restrict members, Can delete messages, Can pin messages, Can invite users via link.\n\n` +
     `👤 Support: ${DEV_TAG}`;
 
