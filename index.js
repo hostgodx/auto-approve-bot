@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * ══════════════════════════════════════════════════════════════
- *  Auto-Approve Bot — Telekaf Rich Messages Edition
+ *  AUTO APPROVAL BOT — Telekaf Rich Messages Edition
  *  Telegraf (from @icanseeuanywhere/telekaf) + RichMessage cards
  *
  *  • Approves join requests for the private channel only after the
  *    user joins all configured force-subscribe channels/groups
  *  • Real RichMessage cards (headings, tables, task lists, footer)
+ *  • Super reactions on user messages and on the bot's own replies
  *  • Built-in keep-alive HTTP server for Render + UptimeRobot
  *    (/ , /ping , /health)
  *
@@ -14,10 +15,6 @@
  *    1. npm install
  *    2. cp .env.example .env   (or export environment variables)
  *    3. npm start
- *
- *  Note: the Bot API cannot list every chat the bot is in, so the
- *  owner registers force-sub channels with /addchat (instead of the
- *  old MTProto /set picker).
  * ══════════════════════════════════════════════════════════════
  */
 
@@ -46,7 +43,7 @@ const RH = RichMessage.RichHTMLBuilder;
 // ───────────────── Config ─────────────────
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const OWNER_ID = Number(process.env.OWNER_ID || 0);
-const BRAND_NAME = process.env.BRAND_NAME || 'TECHZONE';
+const BRAND_NAME = process.env.BRAND_NAME || 'AUTO APPROVAL BOT';
 const BRAND_LINK = process.env.BRAND_LINK || '';
 const DEV_TAG = process.env.DEV_TAG || '';
 const REACTIONS = ['1', 'true', 'yes', 'on'].includes(String(process.env.REACTIONS || 'on').toLowerCase());
@@ -59,6 +56,10 @@ if (!OWNER_ID) { console.error('❌ Missing OWNER_ID'); process.exit(1); }
 
 const START_TS = Date.now();
 const DIVIDER = '⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯';
+
+// ✦ Super reaction pool — fired on user messages and the bot's own replies
+const REACTION_POOL = ['🔥', '⚡', '👑', '💎', '✨', '🚀', '💥', '⭐', '❤️‍🔥', '🫡'];
+const pickReaction = () => REACTION_POOL[Math.floor(Math.random() * REACTION_POOL.length)];
 
 const htmlEsc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -149,11 +150,16 @@ async function react(ctx, chatId, messageId, emoji) {
     await ctx.telegram.callApi('setMessageReaction', {
       chat_id: chatId,
       message_id: messageId,
-      reaction: [{ type: 'emoji', emoji }],
+      reaction: [{ type: 'emoji', emoji: emoji || pickReaction() }],
     });
   } catch (e) {
     log('debug', `reaction skipped (${emoji}):`, e.message);
   }
+}
+
+// React to a message the bot just sent (its own replies)
+async function reactToOwn(ctx, msg, emoji) {
+  if (msg && msg.message_id && ctx.chat && ctx.chat.id) react(ctx, ctx.chat.id, msg.message_id, emoji || pickReaction());
 }
 
 const inviteCache = new Map();
@@ -182,11 +188,13 @@ async function membershipOk(telegram, userId) {
   return true;
 }
 
+const listChannels = () => Object.entries(DB.forceSub).map(([id, ch]) => ({ id, ...ch }));
+
 const buildWelcome = (name) => ({
   built: new RH()
-    .heading(1, '⏤ Welcome User')
+    .heading(1, '⏤ AUTO APPROVAL BOT')
     .paragraph(
-      `Welcome to <b>${htmlEsc(BRAND_NAME)}</b> — the Premium Auto Approval Engine. ` +
+      `Welcome <b>${name}</b>, to <b>${htmlEsc(BRAND_NAME)}</b> — the Premium Auto Approval Engine. ` +
       `Send a join request to the private channel, complete verification and get approved.`
     )
     .divider()
@@ -197,20 +205,11 @@ const buildWelcome = (name) => ({
       { text: 'Tap ✅ VERIFY', checked: true },
       { text: 'Your request gets approved 🎉', checked: true }
     )
-    .divider()
-    .heading(2, '🤖 BOT INFORMATION')
-    .table([
-      ['📱 Info', '⚡ Detail'],
-      ['Brand', htmlEsc(BRAND_NAME)],
-      ['Engine', 'Auto Approval Core'],
-      ['Status', 'Online'],
-      ['Uptime', getRuntime()],
-      ['Force-Sub Channels', String(Object.keys(DB.forceSub).length)],
-    ], { bordered: true, striped: true, hasHeader: true })
+    .paragraph('<i>Verification takes less than a minute.</i>')
     .footer(footerHtml())
     .build(),
   fallback:
-    `<b>『 ${htmlEsc(BRAND_NAME)} 』</b>\n${DIVIDER}\n\n` +
+    `<b>『 AUTO APPROVAL BOT 』</b>\n${DIVIDER}\n\n` +
     `👑 <b>Hello ${name}!</b>\n\n` +
     `🤖 I'm the <b>Auto Approval Bot</b> — I verify and approve join requests for the private channel.\n\n` +
     cardShell('📌  <b>HOW IT WORKS</b>',
@@ -257,8 +256,6 @@ const buildApproved = () => ({
   ),
 });
 
-const listChannels = () => Object.entries(DB.forceSub).map(([id, ch]) => ({ id, ...ch }));
-
 async function buildVerifyKeyboard(telegram) {
   const buttons = [];
   for (const [id, ch] of Object.entries(DB.forceSub)) {
@@ -279,12 +276,23 @@ const bot = new Telegraf(BOT_TOKEN);
 
 bot.catch((err) => log('error', 'Telegraf error:', err && err.message ? err.message : err));
 
+// ✦ Super reactions on every user message (private chats)
+bot.use(async (ctx, next) => {
+  try {
+    const msg = ctx.message;
+    if (msg && msg.message_id && ctx.chat && ctx.chat.type === 'private' && !msg.from?.is_bot) {
+      react(ctx, ctx.chat.id, msg.message_id, pickReaction());
+    }
+  } catch (e) { /* silent */ }
+  return next();
+});
+
 // /start — premium welcome card
 bot.start(async (ctx) => {
   const name = htmlEsc((ctx.from && ctx.from.first_name) || 'User');
   const { built, fallback } = buildWelcome(name);
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback);
-  if (msg && msg.message_id) react(ctx, ctx.chat.id, msg.message_id, '⚡');
+  if (msg && msg.message_id) react(ctx, ctx.chat.id, msg.message_id, pickReaction());
 });
 
 // /help — command list
@@ -296,14 +304,18 @@ bot.help(async (ctx) => {
       '<code>/delchat id</code> — remove a force-sub channel (owner)\n' +
       '<code>/listchat</code> — list force-sub channels (owner)') +
     `\n\n${footerHtml()}`;
-  await ctx.replyWithHTML(text);
+  const msg = await ctx.replyWithHTML(text);
+  reactToOwn(ctx, msg, '⚡');
 });
 
 // /addchat — owner registers a force-sub channel/group
 bot.command('addchat', async (ctx) => {
   if (ctx.from.id !== OWNER_ID) return;
   const arg = (ctx.message.text.split(/\s+/)[1] || '').trim();
-  if (!arg) return ctx.replyWithHTML(fallbackWarn('USAGE', 'Usage: <code>/addchat @username</code>  or  <code>/addchat -1001234567890</code>'));
+  if (!arg) {
+    const msg = await ctx.replyWithHTML(fallbackWarn('USAGE', 'Usage: <code>/addchat @username</code>  or  <code>/addchat -1001234567890</code>'));
+    return reactToOwn(ctx, msg, '⚠️');
+  }
   const chatId = /^-?\d+$/.test(arg) ? Number(arg) : (arg.startsWith('@') ? arg : `@${arg}`);
   try {
     const chat = await ctx.telegram.callApi('getChat', { chat_id: chatId });
@@ -312,11 +324,13 @@ bot.command('addchat', async (ctx) => {
       username: chat.username || null,
     };
     saveData();
-    await ctx.replyWithHTML(
+    const msg = await ctx.replyWithHTML(
       fallbackSuccess('CHANNEL ADDED', `<b>${htmlEsc(chat.title || String(chat.id))}</b>\n<code>${chat.id}</code> is now a force-subscribe channel.`)
     );
+    reactToOwn(ctx, msg, '👑');
   } catch (e) {
-    await ctx.replyWithHTML(fallbackError('FAILED', `Could not resolve that chat.\nMake sure the bot is a member/admin there.\n\n<code>${htmlEsc(e.message)}</code>`));
+    const msg = await ctx.replyWithHTML(fallbackError('FAILED', `Could not resolve that chat.\nMake sure the bot is a member/admin there.\n\n<code>${htmlEsc(e.message)}</code>`));
+    reactToOwn(ctx, msg, '🚫');
   }
 });
 
@@ -324,12 +338,19 @@ bot.command('addchat', async (ctx) => {
 bot.command('delchat', async (ctx) => {
   if (ctx.from.id !== OWNER_ID) return;
   const arg = (ctx.message.text.split(/\s+/)[1] || '').trim();
-  if (!arg) return ctx.replyWithHTML(fallbackWarn('USAGE', 'Usage: <code>/delchat -1001234567890</code>'));
+  if (!arg) {
+    const msg = await ctx.replyWithHTML(fallbackWarn('USAGE', 'Usage: <code>/delchat -1001234567890</code>'));
+    return reactToOwn(ctx, msg, '⚠️');
+  }
   const removed = DB.forceSub[arg];
-  if (!removed) return ctx.replyWithHTML(fallbackWarn('NOT FOUND', 'That chat is not in the force-sub list.'));
+  if (!removed) {
+    const msg = await ctx.replyWithHTML(fallbackWarn('NOT FOUND', 'That chat is not in the force-sub list.'));
+    return reactToOwn(ctx, msg, '⚠️');
+  }
   delete DB.forceSub[arg];
   saveData();
-  await ctx.replyWithHTML(fallbackSuccess('REMOVED', `<b>${htmlEsc(removed.title)}</b> removed from force-subscribe.`));
+  const msg = await ctx.replyWithHTML(fallbackSuccess('REMOVED', `<b>${htmlEsc(removed.title)}</b> removed from force-subscribe.`));
+  reactToOwn(ctx, msg, '💥');
 });
 
 // /listchat — owner views force-sub list (+ /fsubstatus alias)
@@ -338,13 +359,15 @@ const listChatHandler = async (ctx) => {
   const entries = listChannels();
   const pendingTotal = Object.values(DB.pending).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
   if (entries.length === 0) {
-    return ctx.replyWithHTML(fallbackInfo('STATUS', `No force-sub channels configured yet.\n\n⏳ Pending users: <code>${pendingTotal}</code>`));
+    const msg = await ctx.replyWithHTML(fallbackInfo('STATUS', `No force-sub channels configured yet.\n\n⏳ Pending users: <code>${pendingTotal}</code>`));
+    return reactToOwn(ctx, msg, '✨');
   }
   const lines = entries.map((c, i) => `◆ ${i + 1}. ${htmlEsc(c.title)} <code>(${c.id})</code>`).join('\n');
-  await ctx.replyWithHTML(
+  const msg = await ctx.replyWithHTML(
     fallbackInfo(`FORCE-SUB LIST (${entries.length})`, lines) +
     `\n\n⏳ Users pending verification: <code>${pendingTotal}</code>`
   );
+  reactToOwn(ctx, msg, '📋');
 };
 bot.command(['listchat', 'fsubstatus', 'listfsub'], listChatHandler);
 
@@ -391,7 +414,7 @@ bot.on('chat_join_request', async (ctx) => {
   const { built, fallback } = buildVerify(name);
   const keyboard = await buildVerifyKeyboard(ctx.telegram);
   const msg = await sendRichCard(ctx, userId, built, fallback, { reply_markup: keyboard });
-  if (msg && msg.message_id) react(ctx, userId, msg.message_id, '💤');
+  if (msg && msg.message_id) react(ctx, userId, msg.message_id, '👑');
 });
 
 // VERIFY callback
@@ -424,25 +447,19 @@ bot.action('verify_join', async (ctx) => {
   const messageId = ctx.callbackQuery && ctx.callbackQuery.message && ctx.callbackQuery.message.message_id;
 
   // Replace the verify message with the approved card (edit → delete+resend)
-  let replaced = false;
   if (chatId && messageId) {
     try {
       await ctx.telegram.editMessageText(chatId, messageId, undefined, fallback, { parse_mode: 'HTML' });
-      replaced = true;
     } catch (e) {
       try { await ctx.telegram.deleteMessage(chatId, messageId); } catch (e2) {}
     }
-    if (!replaced) {
-      await sendRichCard(ctx, chatId, built, fallback);
-      replaced = true;
-    } else {
-      // Upgrade to a real rich card silently
-      try { await ctx.telegram.deleteMessage(chatId, messageId); } catch (e2) {}
-      await sendRichCard(ctx, chatId, built, fallback);
-    }
+    // Upgrade to a real rich card silently
+    try { await ctx.telegram.deleteMessage(chatId, messageId); } catch (e2) {}
+    await sendRichCard(ctx, chatId, built, fallback);
+    react(ctx, chatId, messageId, '🔥');
+  } else if (chatId) {
+    await sendRichCard(ctx, chatId, built, fallback);
   }
-  if (!replaced && chatId) await sendRichCard(ctx, chatId, built, fallback);
-  if (chatId && messageId) react(ctx, chatId, messageId, '🔥');
   if (failed > 0) log('warn', `Partial approval for user ${userId}: ${failed} failed`);
 });
 
@@ -465,21 +482,17 @@ const KEEPALIVE_HTML = `<!doctype html>
   .orb.b { width:300px; height:300px; background:#b03bff; bottom:-70px; right:-70px; animation-delay:-6s; }
   @keyframes drift { from{transform:translate(0,0) scale(1)} to{transform:translate(60px,40px) scale(1.15)} }
   .card { position:relative; z-index:1; background:rgba(20,20,31,.82); border:1px solid rgba(124,92,255,.35); border-radius:22px;
-          padding:42px 48px; text-align:center; max-width:480px; width:92%;
+          padding:48px 52px; text-align:center; max-width:460px; width:92%;
           box-shadow:0 0 60px rgba(124,92,255,.35), inset 0 0 40px rgba(124,92,255,.08); backdrop-filter:blur(12px); }
   .badge { display:inline-flex; align-items:center; gap:8px; font-size:12px; letter-spacing:2px; color:var(--ok);
-           border:1px solid rgba(53,224,161,.4); background:rgba(53,224,161,.08); padding:6px 16px; border-radius:999px; margin-bottom:22px; }
+           border:1px solid rgba(53,224,161,.4); background:rgba(53,224,161,.08); padding:6px 16px; border-radius:999px; margin-bottom:26px; }
   .dot { width:9px; height:9px; border-radius:50%; background:var(--ok); box-shadow:0 0 12px var(--ok); animation:pulse 1.4s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
-  h1 { font-size:30px; font-weight:800; letter-spacing:1px;
+  h1 { font-size:29px; font-weight:800; letter-spacing:1px; line-height:1.25;
        background:linear-gradient(135deg,#c9b8ff 0%,#7c5cff 45%,#b03bff 100%);
-       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; }
-  .sub { color:var(--dim); font-size:13px; letter-spacing:3px; text-transform:uppercase; margin-bottom:26px; }
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
-  .stat { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:14px 8px; }
-  .stat .v { font-size:18px; font-weight:700; color:#d9d2ff; font-variant-numeric:tabular-nums; }
-  .stat .k { font-size:10px; color:var(--dim); letter-spacing:1.5px; text-transform:uppercase; margin-top:4px; }
-  .bar { height:4px; border-radius:4px; background:rgba(255,255,255,.06); overflow:hidden; margin-bottom:18px; }
+       -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:10px; }
+  .sub { color:var(--dim); font-size:12px; letter-spacing:3px; text-transform:uppercase; margin-bottom:26px; }
+  .bar { height:4px; border-radius:4px; background:rgba(255,255,255,.06); overflow:hidden; margin-bottom:22px; }
   .bar > div { height:100%; width:40%; background:linear-gradient(90deg,#7c5cff,#b03bff); animation:slide 2.4s ease-in-out infinite; }
   @keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
   .foot { color:var(--dim); font-size:11px; letter-spacing:2px; }
@@ -490,27 +503,11 @@ const KEEPALIVE_HTML = `<!doctype html>
   <div class="orb a"></div><div class="orb b"></div>
   <div class="card">
     <div class="badge"><span class="dot"></span>ONLINE</div>
-    <h1>『 ${htmlEsc(BRAND_NAME)} 』</h1>
-    <div class="sub">Auto Approval Engine</div>
-    <div class="grid">
-      <div class="stat"><div class="v" id="uptime">—</div><div class="k">Uptime</div></div>
-      <div class="stat"><div class="v" id="hits">—</div><div class="k">Pings</div></div>
-      <div class="stat"><div class="v" id="status">OK</div><div class="k">Status</div></div>
-    </div>
+    <h1>『 AUTO APPROVAL BOT 』</h1>
+    <div class="sub">Premium Verification Bot</div>
     <div class="bar"><div></div></div>
-    <div class="foot">✦ <b>${htmlEsc(BRAND_NAME)}</b> • SECURE • VERIFIED ✦</div>
+    <div class="foot">✦ <b>AUTO APPROVAL BOT</b> • SECURE • VERIFIED ✦</div>
   </div>
-<script>
-  async function tick() {
-    try {
-      const r = await fetch('/health'); const d = await r.json();
-      document.getElementById('uptime').textContent = d.uptime;
-      document.getElementById('hits').textContent = d.requests;
-      document.getElementById('status').textContent = 'OK';
-    } catch (e) { document.getElementById('status').textContent = 'DOWN'; }
-  }
-  tick(); setInterval(tick, 15000);
-</script>
 </body>
 </html>`;
 
