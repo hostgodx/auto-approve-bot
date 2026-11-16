@@ -346,17 +346,16 @@ const buildWelcome = (user) => {
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
     .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME));
 
-  // Owner contact — premium emoji concat (inline button)
+  // Three inline buttons the user wants: Menu, Add Me to Channel, Contact Owner
   const ownerId = process.env.OWNER_ID || '';
-  const buttons = [];
+  const botUsername = process.env.BOT_USERNAME || 'auto_approve_bot';
+  const btns = [];
+  btns.push({ text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' });
+  btns.push({ text: '➕ Add Me to Channel', url: `https://t.me/${botUsername}?startchannel=true`, style: 'secondary' });
   if (ownerId) {
-    buttons.push({ text: '👑 Owner Contact', url: `tg://user?id=${ownerId}`, style: 'primary' });
+    btns.push({ text: '👑 Contact Owner', url: `tg://user?id=${ownerId}`, style: 'primary' });
   }
-  // Commands — opens on a new page via callback
-  buttons.push({ text: '⌨️ Commands', callbackData: 'show_cmds', style: 'secondary' });
-  if (buttons.length) {
-    rich.buttonRow(buttons, 'center');
-  }
+  rich.buttonRow(btns, 'center');
 
   rich.footer(footerHtml());
 
@@ -470,16 +469,66 @@ bot.start(async (ctx) => {
   }
 });
 
-// /help — command list
+// /menu — commands page (also opened from inline button)
+bot.command('menu', async (ctx) => {
+  const built = new RH()
+    .heading(2, '⌨️ COMMANDS')
+    .table(
+      [
+        ['Command', 'What it does'],
+        ['/start', 'Premium welcome card with images & theme music'],
+        ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
+        ['/delchat id', 'Remove a force-sub channel (owner only)'],
+        ['/listchat', 'List all force-sub channels (owner only)'],
+        ['/verify_join', 'Tap to verify membership & get approved'],
+        ['/menu', 'Show this commands page'],
+      ],
+      { bordered: true, striped: true, hasHeader: true, compact: true }
+    )
+    .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`)
+    .footer(footerHtml());
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `⌨️ <b>COMMANDS</b>\n\n` +
+    `• /start — Premium welcome card with images & theme music\n` +
+    `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
+    `• /delchat id — Remove a force-sub channel (owner only)\n` +
+    `• /listchat — List all force-sub channels (owner only)\n` +
+    `• /verify_join — Tap to verify membership & get approved\n` +
+    `• /menu — Show this commands page\n\n` +
+    `${footerHtml()}`;
+  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
+  reactToOwn(ctx, msg, '⌨️');
+});
+
+// /help — command list (rich card)
 bot.help(async (ctx) => {
-  const text =
-    cardShell('📖  <b>HELP</b>',
-      '<code>/start</code> — welcome card\n' +
-      '<code>/addchat @username|id</code> — register a force-sub channel (owner)\n' +
-      '<code>/delchat id</code> — remove a force-sub channel (owner)\n' +
-      '<code>/listchat</code> — list force-sub channels (owner)') +
-    `\n\n${footerHtml()}`;
-  const msg = await ctx.replyWithHTML(text);
+  const built = new RH()
+    .heading(2, '📖 HELP')
+    .table(
+      [
+        ['Command', 'What it does'],
+        ['/start', 'Premium welcome card with images & theme music'],
+        ['/addchat @username|id', 'Register a force-sub channel (owner only)'],
+        ['/delchat id', 'Remove a force-sub channel (owner only)'],
+        ['/listchat', 'List all force-sub channels (owner only)'],
+        ['/verify_join', 'Tap to verify membership & get approved'],
+        ['/menu', 'Show this commands page'],
+      ],
+      { bordered: true, striped: true, hasHeader: true, compact: true }
+    )
+    .footer(footerHtml());
+  const fallback =
+    `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+    `📖 <b>HELP</b>\n\n` +
+    `• /start — Premium welcome card with images & theme music\n` +
+    `• /addchat @username|id — Register a force-sub channel (owner only)\n` +
+    `• /delchat id — Remove a force-sub channel (owner only)\n` +
+    `• /listchat — List all force-sub channels (owner only)\n` +
+    `• /verify_join — Tap to verify membership & get approved\n` +
+    `• /menu — Show this commands page\n\n` +
+    `${footerHtml()}`;
+  const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⚡');
 });
 
@@ -488,7 +537,16 @@ bot.command('addchat', async (ctx) => {
   if (ctx.from.id !== OWNER_ID) return;
   const arg = (ctx.message.text.split(/\s+/)[1] || '').trim();
   if (!arg) {
-    const msg = await ctx.replyWithHTML(fallbackWarn('USAGE', 'Usage: <code>/addchat @username</code>  or  <code>/addchat -1001234567890</code>'));
+    const built = new RH()
+      .heading(2, '⚠️ USAGE')
+      .paragraph(`Usage: <code>/addchat @username</code>  or  <code>/addchat -1001234567890</code>`)
+      .footer(footerHtml());
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+      `⚠️ <b>USAGE</b>\n\n` +
+      `Usage: /addchat @username  or  /addchat -1001234567890\n\n` +
+      `${footerHtml()}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     return reactToOwn(ctx, msg, '⚠️');
   }
   const chatId = /^-?\d+$/.test(arg) ? Number(arg) : (arg.startsWith('@') ? arg : `@${arg}`);
@@ -514,7 +572,16 @@ bot.command('delchat', async (ctx) => {
   if (ctx.from.id !== OWNER_ID) return;
   const arg = (ctx.message.text.split(/\s+/)[1] || '').trim();
   if (!arg) {
-    const msg = await ctx.replyWithHTML(fallbackWarn('USAGE', 'Usage: <code>/delchat -1001234567890</code>'));
+    const built = new RH()
+      .heading(2, '⚠️ USAGE')
+      .paragraph(`Usage: <code>/delchat -1001234567890</code>`)
+      .footer(footerHtml());
+    const fallback =
+      `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'sans')} 』</b>\n${DIVIDER}\n\n` +
+      `⚠️ <b>USAGE</b>\n\n` +
+      `Usage: /delchat -1001234567890\n\n` +
+      `${footerHtml()}`;
+    const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
     return reactToOwn(ctx, msg, '⚠️');
   }
   const removed = DB.forceSub[arg];

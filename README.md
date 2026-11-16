@@ -14,8 +14,10 @@ using real **Rich Messages (Bot API 10.1/10.3)**.
 - 🎉 **Animated message effects** on bot messages — randomized from a 20-effect pool, 🎉 celebration by default
 - 🖼️ **Welcome images** — 3 separate images at top (`/welcome.jpg`, `/welcome2.jpg`, `/welcome3.jpg`), each as `<figure><img>` block
 - 🎵 **Welcome Theme audio** (`/welcome.mp3`) — original Desi Dhol Beats instrumental
-- 👑 **Owner Contact inline button** → `tg://user?id=<OWNER_ID>`
-- ⌨️ **Commands inline button** → taps to open a **new page** with full command list (/start, /addchat, /delchat, /listchat, /verify_join)
+- 📋 **Menu inline button** → opens commands page (/menu)
+- ➕ **Add Me to Channel inline button** → adds bot to your channel
+- 👑 **Contact Owner inline button** → direct chat with owner (`tg://user?id=<OWNER_ID>`)
+- `/menu` command — shows full commands list as rich card
 - ❌ **No YouTube link** — removed per user request
 - ▶️ **Official Listen button** in the welcome card (links the artist's official video — the bot never hosts copyrighted audio)
 - 👑 **Super reactions** (🔥 ⚡ 👑 💎 …) on every user message and on the bot's own replies
