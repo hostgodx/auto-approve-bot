@@ -57,6 +57,9 @@ const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'fsub_data.json'
 const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://auto-approve-bot-m60r.onrender.com').replace(/\/+$/, '');
 const WELCOME_AUDIO_URL = process.env.WELCOME_AUDIO_URL || `${PUBLIC_URL}/welcome.mp3`;
 const WELCOME_AUDIO_FILE = path.join(__dirname, 'assets', 'welcome.mp3');
+// Official listening link (we don't host copyrighted audio — we link the official source)
+const LISTEN_LINK = ['1', 'true', 'yes', 'on'].includes(String(process.env.LISTEN_LINK || 'on').toLowerCase());
+const OFFICIAL_LISTEN_URL = process.env.OFFICIAL_LISTEN_URL || 'https://www.youtube.com/watch?v=ZE0vLQ9nZH4';
 
 if (!BOT_TOKEN) { console.error('❌ Missing BOT_TOKEN'); process.exit(1); }
 if (!OWNER_ID) { console.error('❌ Missing OWNER_ID'); process.exit(1); }
@@ -329,8 +332,14 @@ const buildWelcome = (user) => {
       '<p>⚠️ Requests from users who never tap VERIFY stay pending forever.</p>' +
       '<p>⚠️ Faking membership is impossible — the bot verifies it live.</p>')
     .paragraph('🎁 ' + RH.spoiler('Early supporters get lifetime priority approval.'))
-    .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME))
-    .footer(footerHtml());
+    .pullQuote('Fast. Secure. Premium.', htmlEsc(BRAND_NAME));
+  if (LISTEN_LINK && OFFICIAL_LISTEN_URL) {
+    rich.buttonRow(
+      [{ text: '▶️  Nazra Ke Teer — Official Video', url: OFFICIAL_LISTEN_URL, style: 'primary' }],
+      'center'
+    );
+  }
+  rich.footer(footerHtml());
 
   return {
     built: rich.build(),
@@ -348,7 +357,11 @@ const buildWelcome = (user) => {
         '⚡ Instant approval  •  🛡️ Force-sub gate\n' +
         '🟢 24/7 online  •  🎵 Welcome theme song\n' +
         (DEV_TAG ? `💬 Support: ${htmlEsc(DEV_TAG)}` : '')) +
-      `\n\n<blockquote>${FANCY('F A S T   •   S E C U R E   •   P R E M I U M', 'mono')}</blockquote>\n\n${footerHtml()}`,
+      `\n\n<blockquote>${FANCY('F A S T   •   S E C U R E   •   P R E M I U M', 'mono')}</blockquote>\n\n` +
+      (LISTEN_LINK && OFFICIAL_LISTEN_URL
+        ? `▶️ <a href="${OFFICIAL_LISTEN_URL}"><b>Nazra Ke Teer — Official Video</b></a>\n\n`
+        : '') +
+      `${footerHtml()}`,
   };
 };
 

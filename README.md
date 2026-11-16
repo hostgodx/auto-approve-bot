@@ -12,6 +12,7 @@ using real **Rich Messages (Bot API 10.1/10.3)**.
 - 🃏 **Rich Message cards** — headings, task lists, striped tables, collapsible FAQ `<details>`,
   pull-quotes, spoilers, footers, dividers
 - 🎉 **Animated message effects** on bot messages — randomized from a 20-effect pool, 🎉 celebration by default
+- ▶️ **Official Listen button** in the welcome card (links the artist's official video — the bot never hosts copyrighted audio)
 - 👑 **Super reactions** (🔥 ⚡ 👑 💎 …) on every user message and on the bot's own replies
 - @️⃣ **Welcome card with @username mention**, VIP styling, and an inline **Welcome Theme** (`welcome.mp3`) — an original synthesized Haryanvi-style dhol/algoza instrumental (no copyrighted audio)
 - 🔤 **Fancy Unicode fonts** (bold / sans-bold / monospace) for premium plain-text accents
