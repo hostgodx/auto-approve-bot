@@ -547,9 +547,24 @@ if (SELF_PING_URL) {
 }
 
 // ───────────────── Launch ─────────────────
-bot.launch({ drop_pending_updates: false })
-  .then(() => log('success', `Bot is polling… (brand: ${BRAND_NAME})`))
-  .catch((e) => { log('error', 'Launch failed:', e.message || e); process.exit(1); });
+// Retry on duplicate-poller conflicts (409) instead of exiting — a dying
+// process means Render returns 502. Keep the process (and /ping) alive.
+async function launchWithRetry(attempt = 1) {
+  try {
+    await bot.launch({ drop_pending_updates: false });
+    log('success', `Bot is polling… (brand: ${BRAND_NAME})`);
+  } catch (e) {
+    const msg = (e && e.message) || String(e);
+    log('error', `Launch failed (attempt ${attempt}/6):`, msg);
+    if (/409|conflict/i.test(msg) && attempt < 6) {
+      log('warn', 'Duplicate poller conflict — retrying in 5s…');
+      await new Promise((r) => setTimeout(r, 5000));
+      return launchWithRetry(attempt + 1);
+    }
+    log('error', 'Polling disabled — keep-alive server stays up (check bot token / duplicates).');
+  }
+}
+launchWithRetry();
 
 process.once('SIGINT', () => { log('warn', 'SIGINT — shutting down'); bot.stop('SIGINT'); server.close(() => process.exit(0)); });
 process.once('SIGTERM', () => { log('warn', 'SIGTERM — shutting down'); bot.stop('SIGTERM'); server.close(() => process.exit(0)); });
