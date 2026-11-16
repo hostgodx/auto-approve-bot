@@ -353,7 +353,7 @@ const buildWelcome = (user) => {
   rich.buttonRow(
     [
       { text: '📋 Menu', callbackData: 'show_cmds', style: 'primary' },
-      { text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'secondary' },
+      { text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'secondary' },
     ],
     'center'
   );
@@ -490,7 +490,7 @@ bot.command('menu', async (ctx) => {
       { bordered: true, striped: true, hasHeader: true, compact: true }
     )
     .paragraph(`💬 Support: ${DEV_TAG ? htmlEsc(DEV_TAG) : 'In-bot'}`)
-    .buttonRow([{ text: '➕ Add Channel/Group', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
+    .buttonRow([{ text: '➕ Add Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
     `⌨️ <b>COMMANDS</b>\n\n` +
@@ -500,7 +500,7 @@ bot.command('menu', async (ctx) => {
     `• /listchat — List all force-sub channels (owner only)\n` +
     `• /verify_join — Tap to verify membership and get approved\n` +
     `• /menu — Show this commands page\n\n` +
-    `🤖 Channel/Group mein bot add karne ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
+    `🤖 Channel/Group mein bot add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
     `Dialog mein apna CHANNEL ya GROUP select karein, phir bot ko admin banayein.\n\n`;
   const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
   reactToOwn(ctx, msg, '⌨️');
@@ -566,13 +566,13 @@ bot.command('addchat', async (ctx) => {
       .heading(2, '✅ CHANNEL ADDED')
       .paragraph(`<b>${htmlEsc(chat.title || String(chat.id))}</b> <code>(${chat.id})</code> is now a force-subscribe channel.`)
       .paragraph(`Type: ${chat.type || 'group'}`)
-    .buttonRow([{ text: '🤖 Add Bot as Admin', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
+    .buttonRow([{ text: '🤖 Add Bot as Admin', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
     const fallback =
       `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
       `✅ <b>CHANNEL ADDED</b>\n\n` +
       `${htmlEsc(chat.title || String(chat.id))} (${chat.id}) is now a force-subscribe channel.\n` +
       `Type: ${chat.type || 'group'}\n\n` +
-      `🤖 Bot ko admin banane ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
+      `🤖 Bot ko admin banane ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
       `Dialog mein ${htmlEsc(chat.title || String(chat.id))} select karein, phir bot ko admin banayein.\n\n` +
       `👤 Support: ${DEV_TAG}`;
     const msg = await sendRichCard(ctx, ctx.chat.id, built, fallback, {}, { celebration: false });
@@ -701,7 +701,7 @@ bot.command('set', async (ctx) => {
     .paragraph('Zaroori permissions: <b>Can restrict members</b>, <b>Can delete messages</b>, <b>Can pin messages</b>, <b>Can invite users via link</b>.')
     .paragraph(`👤 Support: ${DEV_TAG}`);
 
-  built.buttonRow([{ text: '➕ Add Me to Channel', url: 'https://t.me/Techzone_info_bot?startchannel=new', style: 'primary' }], 'center');
+  built.buttonRow([{ text: '➕ Add Me to Channel/Group', url: 'https://t.me/Techzone_info_bot?startgroup=new', style: 'primary' }], 'center');
 
   const fallback =
     `<b>『 ${FANCY(BRAND_NAME.toUpperCase(), 'bold')} 』</b>\n${DIVIDER}\n\n` +
@@ -710,8 +710,8 @@ bot.command('set', async (ctx) => {
       ? '⚠️ Abhi koi group ya channel force-sub mein add nahi hai.\n\n'
       : entries.map((c, i) => `${i + 1}. ${typeIcon(c.type)} ${htmlEsc(c.title)} (${c.id})${c.username ? ` @${htmlEsc(c.username)}` : ''}`).join('\n') + '\n\n') +
     `⏳ Users pending verification: <code>${pendingTotal}</code>\n\n` +
-    `🤖 Apne CHANNEL mein add karne ke liye: https://t.me/Techzone_info_bot?startchannel=new\n` +
-    `Dialog mein CHANNEL select karein (group nahi), phir bot ko admin banayein.\n` +
+    `🤖 Apne CHANNEL ya GROUP mein add karne ke liye: https://t.me/Techzone_info_bot?startgroup=new\n` +
+    `Dialog mein CHANNEL ya GROUP select karein, phir bot ko admin banayein.\n` +
     `Permissions: Can restrict members, Can delete messages, Can pin messages, Can invite users via link.\n\n` +
     `👤 Support: ${DEV_TAG}`;
 
